@@ -1,79 +1,88 @@
 # Logging and Monitoring
 
-Logging and monitoring turn normal homelab operations into a defensive learning cycle: establish a baseline, identify meaningful deviations, investigate with evidence, and document improvements.
+Logging, metrics, health checks, and dashboards support a defensive learning cycle: establish a baseline, detect meaningful deviations, investigate with evidence, and document improvements.
 
 ## Monitoring Goals
 
-- Detect authentication problems, service failures, unexpected changes, and backup issues.
+- Detect authentication problems, service failures, container instability, resource pressure, and backup issues.
 - Keep enough evidence to troubleshoot and build a reliable incident timeline.
-- Review service health without assuming that a running container is a healthy service.
-- Collect only the data needed for a defined operational or security purpose.
+- Distinguish container state, application health, and host health.
+- Collect only data that supports a defined operational or security purpose.
 
-## Log Sources
+## Visibility Sources
 
-| Source | Useful events | Review focus |
+| Source | Useful events or data | Review focus |
 | --- | --- | --- |
-| SSH authentication logs | Successful logins, failures, invalid users, session start and end | Repeated failures, access outside expected periods, or an unexpected source such as `<REDACTED_SOURCE>`. |
-| Docker container logs | Restarts, application errors, authentication failures, dependency problems | Crash loops, new error patterns, or behavior after an image update. |
-| System update logs | Package changes, failed updates, reboot requirements | Missed security updates, unexpected package changes, or recurring failures. |
-| DNS filtering logs | Allowed and blocked requests, filter status, client trends | Sudden query spikes or repeated requests to an unexpected `<REDACTED_DOMAIN>`. |
-| VPN connection logs | Connection attempts, authentication results, session start and end | Repeated failures, unusual timing, or a new `<REDACTED_SOURCE>`. |
-| Backup job logs | Job start and end, copied data, verification result, errors | Missed runs, incomplete copies, capacity problems, or verification failures. |
-| Service health checks | Availability, response status, restart count, resource pressure | Repeated outages, degraded response, or a check that stops reporting. |
+| Uptime Kuma | Check state, response time, outage duration, recovery | Repeated failures, dependency impact, and whether downtime meets incident criteria. |
+| Prometheus | Time-series metrics, scrape success, resource trends | Missing targets, sustained threshold changes, and retention health. |
+| Grafana | Dashboards and alert views | Clear context, accurate labels, and whether panels support a decision. |
+| Node Exporter | CPU, memory, filesystem, network, and supported hardware metrics | Disk pressure, sustained resource use, temperature trends, and host degradation. |
+| Docker logs and container state | Application errors, restarts, health, and exit behavior | Crash loops, new errors, or behavior after an update. |
+| Container metrics exporter | Container CPU, memory, network, and restart trends | Unexpected resource spikes and noisy or unstable workloads. |
+| Host and SSH logs | Service failures, logins, authentication failures, session activity | Repeated failures, unusual timing, or an unexpected `<REDACTED_SOURCE>`. |
+| DNS security logs | Allowed and blocked requests, filter status, sanitized trends | Query spikes, repeated `<REDACTED_DOMAIN>` patterns, and false positives. |
+| CrowdSec, if implemented | Alerts, decisions, scenarios, and bouncer results | Evidence quality, false positives, decision expiry, and enforcement impact. |
+| Backup job logs | Job result, copied data, verification, capacity, and errors | Missed runs, incomplete copies, or integrity failures. |
 
-Document actual log locations privately. Public examples should use labels such as `<LOG_SOURCE>` and must not copy real usernames, addresses, domains, or queries.
+Actual log locations and scrape targets remain private. Public examples must use placeholders and must not include real users, addresses, domains, DNS histories, or infrastructure labels.
 
-## Weekly Log Review Checklist
+## First Operational Exercise Candidate
 
-- [ ] Confirm the host time and expected log sources are reporting.
-- [ ] Review SSH and VPN successes and failures for unusual timing or repetition.
-- [ ] Check container restarts, health-check failures, and new application errors.
-- [ ] Confirm system updates completed or record why they were deferred.
-- [ ] Look for DNS filtering spikes or repeated unusual patterns without recording personal browsing history.
-- [ ] Verify scheduled backup jobs completed and their validation step passed.
-- [ ] Compare high-value events with recent authorized maintenance.
-- [ ] Record findings, false positives, and follow-up actions using sanitized notes.
+### Weekly Homelab Log Review
+
+Start with a manual weekly review before adding complex alerting. Record the review date, sources checked, expected maintenance, sanitized findings, and follow-up actions.
+
+- [ ] Review failed SSH login attempts and compare them with expected access.
+- [ ] Review container restarts, health changes, and new application errors.
+- [ ] Review Uptime Kuma service-health checks and any downtime.
+- [ ] Review backup job status and verification results.
+- [ ] Review a privacy-safe DNS security summary, not raw browsing history.
+- [ ] Review Prometheus target health and important host metrics if implemented.
+- [ ] Review CrowdSec alerts or decisions only if the tool has been validated.
+- [ ] Record findings in `docs/lessons-learned.md`.
+- [ ] Open an incident note if an event appears abnormal or requires containment.
 
 ## High-Value Events to Watch
 
 - Multiple authentication failures followed by a success.
-- A successful administrative login from an unexpected source or at an unusual time.
+- A successful administrative login from an unexpected source or time.
 - A new listening service, published port, user, authorized key, or privileged container.
-- Repeated container restarts, out-of-memory events, disk errors, or low free space.
-- Security updates that repeatedly fail or a service that remains on an unsupported version.
-- Backup jobs that stop running, shrink unexpectedly, or fail verification.
-- Logging or health checks that become silent without an approved change.
+- Repeated container restarts, missing scrape targets, failed health checks, or dashboard gaps.
+- Sustained CPU, memory, temperature, filesystem, or network changes outside the baseline.
+- DNS security spikes or repeated blocked activity that requires privacy-aware triage.
+- CrowdSec decisions that could affect legitimate access.
+- Backup jobs that stop, shrink unexpectedly, or fail verification.
 
 ## Fictional Sanitized Events
 
-The following examples are invented to demonstrate triage questions. They are not copied from the live environment.
+These examples are invented and are not copied from the live environment.
 
 ```text
-<UTC_TIMESTAMP> <HOMELAB_HOST> sshd: authentication failure for <REDACTED_USER> from <REDACTED_SOURCE>
-<UTC_TIMESTAMP> <SERVICE_NAME>: health check changed from healthy to unhealthy
+<UTC_TIMESTAMP> <HOMELAB_HOST> sshd: authentication failure for <REDACTED> from <REDACTED_SOURCE>
+<UTC_TIMESTAMP> <UPTIME_CHECK>: state changed from healthy to unavailable
+<UTC_TIMESTAMP> <CONTAINER_NAME>: restart count exceeded <PLACEHOLDER_VALUE>
 <UTC_TIMESTAMP> <BACKUP_JOB>: verification failed for <BACKUP_TARGET>
-<UTC_TIMESTAMP> <VPN_SERVICE>: repeated rejected connection from <REDACTED_SOURCE>
 ```
 
-For each event, ask: Is it expected? What changed? What other evidence confirms it? What is the impact? Does it require containment, recovery, or only documentation?
+For each event, ask: Is it expected? What changed? Which independent source confirms it? What is the impact? Does it require an incident note, a tuning change, or only documentation?
 
 ## Data Minimization and Privacy
 
-- Define a purpose and retention period for each log source.
-- Restrict access to logs and protect them as operational data.
-- Avoid exporting full DNS histories, client identifiers, real addresses, or authentication details to this repository.
+- Define the purpose and `<RETENTION_PERIOD>` for each log and metric source.
+- Restrict access to dashboards, APIs, metrics endpoints, logs, and alert histories.
+- Avoid exporting full DNS histories, client identifiers, real addresses, or authentication details.
+- Sanitize dashboard labels and screenshots before any future publication.
 - Use counts, trends, and redacted excerpts when documenting lessons.
-- Delete logs when their operational purpose and retention requirement have ended.
-- Never collect extra personal data merely because a service makes it available.
+- Delete data when its operational purpose and retention requirement have ended.
 
 ## SOC / Blue Team Learning Value
 
-This routine practices skills used in entry-level defensive roles: identifying log sources, distinguishing normal activity from anomalies, correlating events across systems, preserving a timeline, documenting evidence, and turning findings into better controls. The goal is disciplined analysis, not claiming that a small homelab reproduces a full SOC.
+This routine practices source identification, baseline comparison, event correlation, alert triage, evidence handling, incident documentation, and control improvement. The goal is disciplined entry-level defensive practice, not an enterprise monitoring claim.
 
 ## TODO
 
-- [ ] Define `<RETENTION_PERIOD>` for each log source.
-- [ ] Establish a sanitized baseline for normal service restarts and authentication activity.
-- [ ] Complete one weekly review and record lessons without including raw personal data.
-- [ ] Define alert thresholds only after observing normal behavior.
+- [ ] Complete the first Weekly Homelab Log Review.
+- [ ] Define a small normal baseline before setting alert thresholds.
+- [ ] Document check ownership, retention, and escalation criteria.
+- [ ] Add tools one at a time and remove data sources that do not support a clear decision.
 

@@ -12,6 +12,12 @@ The repository now better represents a practical junior SOC / Blue Team portfoli
 
 Next step: complete one real but sanitized operational exercise, ideally a weekly log review, and record the result in `docs/lessons-learned.md`.
 
+## Tooling Direction Change
+
+The repository is moving from broad application-hosting documentation toward a focused open-source Blue Team lab. The updated direction prioritizes service availability, host and container metrics, dashboards, DNS security, log-based detection, backup validation, and SOC-style operational notes.
+
+This change keeps the Raspberry Pi scope realistic: tools are selected and documented before deployment, lightweight controls come first, and advanced IDS or SIEM platforms are reserved for a more suitable external lab. Future entries should record what was tested, what evidence was reviewed, and how the result improved the defensive baseline.
+
 ## Entry Format
 
 - **Context:** `<SANITIZED_ACTIVITY_OR_CHANGE>`
