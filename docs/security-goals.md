@@ -1,6 +1,6 @@
 # Security Goals
 
-This homelab is designed to practice defensive operations, not just to run self-hosted services.
+This homelab is designed to practice defensive operations, not simply to run applications.
 
 ## Primary Goals
 

@@ -1,35 +1,39 @@
 # Docker Services
 
-This document tracks planned Docker services and the defensive questions that should be answered before deployment.
+This document tracks defensive tool candidates and the questions that must be answered before deployment. Inclusion here means evaluation or planning, not installation.
 
 ## Service Review Template
 
 | Question | Notes |
 | --- | --- |
-| What problem does the service solve? | `<SERVICE_PURPOSE>` |
-| What data does it store? | `<DATA_TYPE>` |
+| What defensive problem does the tool address? | `<SERVICE_PURPOSE>` |
+| What host, container, log, metric, or DNS data does it collect? | `<DATA_TYPE>` |
+| What privileges, capabilities, mounts, or socket access does it require? | `<REQUIRED_ACCESS>` |
 | Does it need internet access? | `<YES_OR_NO>` |
-| Does it need to be reachable from the internet? | Usually `No`. |
-| What ports are required? | Use `<SERVICE_PORT>`. |
-| How is authentication handled? | `<AUTH_METHOD>` |
-| Where are logs stored? | `<LOG_LOCATION>` |
-| How is it backed up? | `<BACKUP_METHOD>` |
+| What interface or `<SERVICE_PORT>` is exposed? | `<LOCAL_ONLY>` or `<VPN_ONLY>` |
+| How is administrative access protected? | `<AUTH_METHOD>` |
+| What is the retention and deletion plan? | `<RETENTION_PLAN>` |
+| What should be backed up and how is restore tested? | `<BACKUP_METHOD>` |
+| How will updates and rollback be validated? | `<UPDATE_AND_ROLLBACK>` |
 
-## Planned Services
+## Candidate Services
 
-- AdGuard Home
-- Jellyfin
-- Jellyseerr
-- Radarr
-- Sonarr
-- OpenVPN
-- Monitoring tools
-- Backup tooling
-- Security logging tools
+| Candidate | Role | Planning status |
+| --- | --- | --- |
+| Uptime Kuma | Service availability and basic alerting | Recommended first operational tool. |
+| Prometheus | Metrics collection and retention | Plan after availability monitoring. |
+| Grafana | Dashboards and operational communication | Pair with an approved metrics source. |
+| Node Exporter | Linux host metrics | Limit endpoint exposure. |
+| Container metrics exporter | Docker resource and restart visibility | Evaluate privilege and socket risk first. |
+| CrowdSec | Log-based detection and response concepts | Add only after a log baseline exists. |
+| AdGuard Home | DNS filtering and security summaries | Local-only administration; privacy review required. |
+| Backup tooling | Verified recovery jobs and status | Select from recovery requirements. |
+
+See [Blue Team tool selection](../blue-team-tools/tool-selection.md) for the staged rationale.
 
 ## TODO
 
-- [ ] Add one reviewed entry per service.
-- [ ] Document Docker networks and volumes.
-- [ ] Add update procedure for containers.
-- [ ] Add rollback notes for failed upgrades.
+- [ ] Complete one review template before enabling each candidate.
+- [ ] Document Docker networks, volumes, and exposure using placeholders.
+- [ ] Validate one service at a time and record rollback steps.
+- [ ] Remove candidates that do not justify their privileges or maintenance cost.

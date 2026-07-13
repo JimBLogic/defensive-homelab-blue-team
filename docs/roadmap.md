@@ -1,54 +1,57 @@
 # Roadmap
 
-This roadmap tracks realistic progress from a documentation baseline toward a repeatable defensive operations portfolio. Checked items are represented in the repository; operational exercises remain unchecked until they are actually performed and documented safely.
+This roadmap tracks a realistic progression from safe documentation to small defensive exercises. Checked items exist as documentation; deployments and operational exercises remain unchecked until they are performed and recorded safely.
 
-## Phase 1: Documentation Foundation
+## Phase 1: Documentation and Privacy Baseline
 
-- [x] Create the starter documentation structure.
-- [x] Define project scope, portfolio purpose, and privacy rules.
-- [x] Add sanitized hardware, network, security, Docker, service, and Bitcoin security pages.
-- [x] Use placeholders instead of real infrastructure values.
+- [x] Define repository sanitization and placeholder rules.
+- [x] Document architecture, trust boundaries, and exposure categories.
+- [x] Define the Blue Team scope and remove unrelated service directions.
+- [x] Document Raspberry Pi tool-selection criteria and staged priorities.
+- [ ] Re-run the privacy and link review before every public release.
 
-## Phase 2: Architecture and Service Baseline
+## Phase 2: Lightweight Monitoring Baseline
 
-- [x] Document a sanitized logical architecture and trust boundaries.
-- [x] Categorize local-only, VPN-only, and non-public management access.
-- [x] Provide a placeholder-only Docker Compose example.
-- [x] Frame self-hosted services as access-control, logging, update, and recovery practice.
-- [ ] Create a sanitized inventory of service purpose, owner, image version, data, ports, and dependencies.
-- [ ] Document an update, validation, and rollback routine for one service.
+- [x] Document Uptime Kuma service-check use cases.
+- [x] Document Prometheus metrics and retention planning.
+- [x] Document Node Exporter host-health planning.
+- [x] Document Grafana dashboard and sanitization planning.
+- [ ] Deploy and validate Uptime Kuma as the first operational tool.
+- [ ] Define a small approved set of service checks and incident thresholds.
+- [ ] Add Prometheus, Node Exporter, and Grafana only after the first tool is stable.
 
-## Phase 3: Security Operations
+## Phase 3: Container and Host Visibility
 
-- [x] Expand the host and Docker hardening checklist.
-- [x] Define high-value log sources and a weekly review checklist.
-- [x] Create a reusable incident response note template.
-- [ ] Complete and document one sanitized weekly log review.
-- [ ] Establish a normal baseline before defining alert thresholds.
-- [ ] Perform a service exposure review and record remediation tasks.
+- [x] Document Docker monitoring risks and selection questions.
+- [x] Add container restart and host resource checks to the review routine.
+- [x] Maintain a privacy-aware log review checklist.
+- [ ] Select a least-privilege container metrics approach.
+- [ ] Record a sanitized host resource baseline.
+- [ ] Investigate one container restart or health-check event.
 
-## Phase 4: Backup and Recovery Validation
+## Phase 4: DNS and Network Defense
 
-- [x] Document backup scope, exclusions, verification, and failure scenarios.
-- [ ] Set recovery objectives, frequency, and retention using placeholders in public notes.
-- [ ] Perform an isolated restore test for one service.
-- [ ] Record sanitized evidence of backup integrity and restore validation.
-- [ ] Add recurring storage-health and capacity checks.
+- [x] Select AdGuard Home as the documented DNS security candidate.
+- [x] Document local-only administration and privacy requirements.
+- [ ] Define a blocked-domain review workflow using sanitized summaries.
+- [ ] Record false-positive handling without publishing browsing history.
+- [ ] Complete a network exposure review for dashboards and metrics endpoints.
 
-## Phase 5: Bitcoin Security Lessons
+## Phase 5: Detection and Response
 
-- [x] Document starter Bitcoin node, Lightning node, and OPSEC lessons.
-- [x] Separate portfolio documentation from wallet, key, channel, and recovery material.
-- [ ] Add a sanitized node-failure scenario and defensive response notes.
-- [ ] Record lessons from a recovery exercise without exposing financial or network data.
-- [ ] Review how availability, backups, privacy, and key custody create different risks.
+- [x] Document CrowdSec as a staged log-based detection candidate.
+- [x] Maintain a reusable incident response note template.
+- [x] Define the Weekly Homelab Log Review exercise.
+- [ ] Complete and record the first weekly review.
+- [ ] Open a sanitized incident note if an abnormal event is identified.
+- [ ] Evaluate alert thresholds and false-positive handling after a normal baseline exists.
 
-## Phase 6: Portfolio Polish
+## Phase 6: Future Advanced Lab
 
-- [x] Improve README navigation and explain the Blue Team learning purpose.
-- [x] Add a structured lessons-learned page for future evidence.
-- [ ] Add a sanitized architecture diagram under `assets/diagrams/`.
-- [ ] Cross-check service pages against the architecture and checklists.
-- [ ] Run a final privacy, link, clarity, and overclaiming review.
-- [ ] Publish only material that has passed the sanitization review.
+- [x] Document why advanced tools require separate evaluation.
+- [ ] Evaluate Loki with Promtail or Alloy after basic log review is established.
+- [ ] Evaluate Suricata only with suitable network visibility and performance capacity.
+- [ ] Test Zeek in an external lab better suited to packet analysis.
+- [ ] Explore Wazuh through an external x86 deployment or limited agent-only path.
+- [ ] Keep Security Onion in an external x86 lab, not on the Raspberry Pi.
 

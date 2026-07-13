@@ -1,21 +1,54 @@
-# Example Docker Compose file using placeholders only.
-# Do not commit real secrets, internal hostnames, private IP addresses, or production values.
+# Concept-only Docker Compose example using placeholders.
+# This is not production configuration and should not be deployed unchanged.
+# Do not commit real addresses, hostnames, paths, credentials, tokens, or secrets.
 
 services:
-  example-service:
-    image: example/image:latest
-    container_name: example-service
+  uptime-monitor:
+    image: <UPTIME_MONITOR_IMAGE>:<PINNED_VERSION>
+    container_name: <UPTIME_MONITOR_CONTAINER>
     restart: unless-stopped
-    environment:
-      - TZ=<TIMEZONE>
-      - EXAMPLE_SETTING=<PLACEHOLDER_VALUE>
     ports:
       - "<HOST_PORT>:<CONTAINER_PORT>"
     volumes:
-      - ./data/example-service:/config
+      - <UPTIME_DATA_PATH>:/data
     networks:
-      - homelab_internal
+      - monitoring_internal
+
+  metrics-collector:
+    image: <METRICS_COLLECTOR_IMAGE>:<PINNED_VERSION>
+    container_name: <METRICS_COLLECTOR_CONTAINER>
+    restart: unless-stopped
+    volumes:
+      - <METRICS_CONFIG_PATH>:/etc/metrics:ro
+      - <METRICS_DATA_PATH>:/metrics-data
+    networks:
+      - monitoring_internal
+
+  dashboard:
+    image: <DASHBOARD_IMAGE>:<PINNED_VERSION>
+    container_name: <DASHBOARD_CONTAINER>
+    restart: unless-stopped
+    ports:
+      - "<HOST_PORT>:<CONTAINER_PORT>"
+    volumes:
+      - <DASHBOARD_DATA_PATH>:/dashboard-data
+    networks:
+      - monitoring_internal
+
+  dns-security:
+    image: <DNS_SECURITY_IMAGE>:<PINNED_VERSION>
+    container_name: <DNS_SECURITY_CONTAINER>
+    restart: unless-stopped
+    ports:
+      - "<HOST_PORT>:<CONTAINER_PORT>"
+    volumes:
+      - <DNS_CONFIG_PATH>:/dns-config
+      - <DNS_DATA_PATH>:/dns-data
+    networks:
+      - dns_internal
 
 networks:
-  homelab_internal:
+  monitoring_internal:
+    internal: true
+  dns_internal:
     driver: bridge
