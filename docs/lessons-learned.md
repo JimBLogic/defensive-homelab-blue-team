@@ -2,7 +2,7 @@
 
 This page provides a consistent place to record practical learning as the homelab evolves. Entries should describe what was observed, why it matters defensively, and what will change next. Keep all examples sanitized.
 
-## Portfolio Progress Log — Defensive Homelab
+## Portfolio Progress Log â€” Defensive Homelab
 
 Completed PR #2: `Improve defensive homelab documentation depth`.
 
@@ -17,6 +17,14 @@ Next step: complete one real but sanitized operational exercise, ideally a weekl
 The repository is moving from broad application-hosting documentation toward a focused open-source Blue Team lab. The updated direction prioritizes service availability, host and container metrics, dashboards, DNS security, log-based detection, backup validation, and SOC-style operational notes.
 
 This change keeps the Raspberry Pi scope realistic: tools are selected and documented before deployment, lightweight controls come first, and advanced IDS or SIEM platforms are reserved for a more suitable external lab. Future entries should record what was tested, what evidence was reviewed, and how the result improved the defensive baseline.
+
+## Deployment Baseline Prepared
+
+A first Docker-based Blue Team baseline has been prepared under `deploy/`.
+
+The default stack focuses on local-only availability monitoring, Linux host metrics, Prometheus metrics collection, and Grafana dashboard preparation. Optional profiles are documented separately for container metrics, DNS security, and detection experiments.
+
+No live operational evidence has been added yet. The next step is to deploy the default stack on the Raspberry Pi, validate access through SSH tunnels, and record the first sanitized operational exercise.
 
 ## Entry Format
 
@@ -57,4 +65,3 @@ This change keeps the Raspberry Pi scope realistic: tools are selected and docum
 Mistakes should be documented without exaggeration or blame. Focus on the condition, impact, correction, and prevention.
 
 - TODO: Add a sanitized example where documentation, monitoring, or a checklist prevented a repeated mistake.
-

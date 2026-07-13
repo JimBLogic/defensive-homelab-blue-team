@@ -28,6 +28,8 @@ Actual log locations and scrape targets remain private. Public examples must use
 
 ## First Operational Exercise Candidate
 
+The [deployment baseline](../deploy/README.md) defines Operational Exercise 001 â€” Baseline Service Health Review. It validates the four default containers, SSH-tunnel access, Prometheus scraping, Grafana connectivity, restart counts, and disk usage before more complex monitoring is added.
+
 ### Weekly Homelab Log Review
 
 Start with a manual weekly review before adding complex alerting. Record the review date, sources checked, expected maintenance, sanitized findings, and follow-up actions.
@@ -85,4 +87,3 @@ This routine practices source identification, baseline comparison, event correla
 - [ ] Define a small normal baseline before setting alert thresholds.
 - [ ] Document check ownership, retention, and escalation criteria.
 - [ ] Add tools one at a time and remove data sources that do not support a clear decision.
-

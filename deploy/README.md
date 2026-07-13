@@ -1,0 +1,288 @@
+# Raspberry Pi 4 Blue Team Docker Baseline
+
+## 1. Purpose
+
+This directory provides the first testable Docker baseline for the Defensive Homelab Blue Team Lab. It is designed for controlled learning on a Raspberry Pi 4 and starts only four services by default:
+
+- Uptime Kuma for availability checks.
+- Prometheus for metrics collection.
+- Node Exporter for Linux host metrics.
+- Grafana OSS for dashboards.
+
+cAdvisor and AdGuard Home are optional profiles. CrowdSec remains documentation-only until log acquisition, privacy, and false-positive handling are reviewed. This baseline is a learning environment, not an enterprise SOC or production promise.
+
+## 2. Hardware Assumptions
+
+- Raspberry Pi 4 with 8GB RAM.
+- 64-bit Linux operating system supported by Docker.
+- 1TB SSD mounted and tested by the operator.
+- Reliable power and wired networking where practical.
+
+The deployment does not assume a particular SSD device name, filesystem, or mount path. Use a placeholder such as `<SSD_MOUNT_POINT>` in notes and adapt storage decisions to the actual host. Nothing in this repository formats or repartitions storage.
+
+## 3. Security Model
+
+- Uptime Kuma, Prometheus, and Grafana bind to `127.0.0.1` by default.
+- Dashboards are accessed from `<ADMIN_WORKSTATION>` through SSH port forwarding.
+- Node Exporter and cAdvisor have no published host ports; Prometheus reaches them through the internal `metrics` network.
+- cAdvisor is disabled by default because it requires sensitive read-only host mounts and privileged access.
+- AdGuard Home is disabled by default and binds its test DNS and administration ports to localhost.
+- CrowdSec has no active Compose service or remediation bouncer in this baseline.
+- Real credentials, addresses, hostnames, logs, and environment values remain outside Git.
+
+## 4. Prerequisites
+
+- A maintained 64-bit Raspberry Pi Linux installation.
+- Docker Engine installed from trusted, official guidance.
+- Docker Compose v2 plugin.
+- Git for retrieving the repository.
+- SSH access from `<ADMIN_WORKSTATION>` if dashboards will be viewed remotely.
+- An operator-approved SSD mount with enough free space for metrics retention and backups.
+
+Do not use unreviewed external installation scripts. Confirm package sources and installation instructions for the chosen operating system.
+
+## 5. Recommended Host Preparation
+
+Before deployment:
+
+1. Apply reviewed operating-system updates and reboot if required.
+2. Confirm system time synchronization.
+3. Confirm the SSD is mounted at the intended `<SSD_MOUNT_POINT>` and survives a planned reboot.
+4. Review free disk space, filesystem health, memory, temperature, and power stability.
+5. Confirm the administrative account can run Docker without exposing the Docker API.
+6. Decide where encrypted or access-controlled backups will be stored as `<BACKUP_TARGET>`.
+
+This guide does not format disks, change firewall rules, or alter SSH configuration.
+
+## 6. Docker and Compose Verification
+
+Run these read-only version checks:
+
+```bash
+docker --version
+docker compose version
+```
+
+After the repository and `.env` are prepared, the included preflight script checks Docker access, architecture, memory, disk space, required files, placeholders, and Compose rendering:
+
+```bash
+./scripts/preflight-check.sh
+```
+
+## 7. Repository Setup
+
+Clone the private repository using the approved authentication method:
+
+```bash
+git clone <REPOSITORY_URL>
+cd defensive-homelab-blue-team/deploy
+```
+
+Do not place tokens or credentials in a committed remote URL, shell history, or documentation.
+
+## 8. Environment File Setup
+
+If `.env` does not already exist, create it from the safe example:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` locally and replace every `<CHANGE_ME>` value. The real `.env` is ignored by Git and must never be committed. Restrict its permissions according to the host security policy.
+
+Review the rendered configuration before starting containers:
+
+```bash
+docker compose --env-file .env config
+```
+
+The example uses convenient image tags for initial testing. Pin each image to a validated version or digest after the first successful review; do not assume `latest` has been production-validated.
+
+## 9. Start the Default Stack
+
+Run the preflight check, then start only the default services:
+
+```bash
+./scripts/preflight-check.sh
+docker compose --env-file .env up -d
+```
+
+No optional profile is enabled by this command.
+
+## 10. Verify Running Containers
+
+Review service state and recent logs:
+
+```bash
+docker compose ps
+docker compose logs --tail=50
+./scripts/verify-stack.sh
+```
+
+Expected default services are `uptime-kuma`, `prometheus`, `node-exporter`, and `grafana`. Treat repeated restarts, unhealthy states, missing metrics, or unexpected errors as findings to investigate.
+
+## 11. Access Dashboards Safely Through SSH Tunnels
+
+From `<ADMIN_WORKSTATION>`, create one tunnel per dashboard as needed:
+
+```bash
+ssh -L 3001:127.0.0.1:3001 <USER>@<HOMELAB_HOST>
+ssh -L 9090:127.0.0.1:9090 <USER>@<HOMELAB_HOST>
+ssh -L 3000:127.0.0.1:3000 <USER>@<HOMELAB_HOST>
+```
+
+While the appropriate tunnel is open, use:
+
+- Uptime Kuma: `http://127.0.0.1:3001`
+- Prometheus: `http://127.0.0.1:9090`
+- Grafana: `http://127.0.0.1:3000`
+
+These are loopback addresses, not real infrastructure values. Do not change the Compose bindings to LAN-wide or public addresses without a separate exposure review.
+
+## 12. First Uptime Kuma Check
+
+1. Open Uptime Kuma through the SSH tunnel.
+2. Create the initial administrator account with a strong local credential stored outside Git.
+3. Add one Docker-internal HTTP check for `http://prometheus:9090/-/ready`.
+4. Use a sanitized display name such as `<SERVICE_NAME>`.
+5. Record the expected state, check interval, and what duration would count as an incident.
+
+Do not add real public targets or copy notification secrets into this repository.
+
+## 13. First Prometheus Check
+
+Open Prometheus through the SSH tunnel and review the Targets page. The default configuration should show:
+
+- `prometheus:9090` for Prometheus self-monitoring.
+- `node-exporter:9100` for host metrics.
+
+cAdvisor should not appear until its reviewed target file is enabled with the `containers` profile. Record any failed scrape without publishing host labels or raw operational data.
+
+## 14. First Grafana Check
+
+1. Open Grafana through the SSH tunnel.
+2. Sign in with the local credentials configured in `.env`.
+3. Confirm the provisioned Prometheus datasource reports successfully.
+4. Create a minimal dashboard for CPU, memory, filesystem, and service-health investigation.
+5. Keep dashboard labels sanitized and do not publish screenshots yet.
+
+## 15. Optional Profiles
+
+Optional profiles require a separate review before use.
+
+### Container metrics: `containers`
+
+cAdvisor requires privileged access and sensitive read-only mounts for the host root, runtime state, system data, and Docker data. Review [Docker Container Monitoring](../blue-team-tools/docker-container-monitoring.md) before enabling it.
+
+Activate its Prometheus target and start the profile:
+
+```bash
+cp prometheus/cadvisor-target.example.yml prometheus/targets/cadvisor.yml
+docker compose --env-file .env --profile containers up -d
+```
+
+The generated target file is ignored by Git. cAdvisor has no published port and is reachable only through the internal `metrics` network.
+
+### DNS security: `dns`
+
+AdGuard Home is a local test service only. It binds the administration interface and test DNS listener to localhost by default:
+
+```bash
+docker compose --env-file .env --profile dns up -d
+```
+
+DNS normally uses port 53, but this baseline uses configurable localhost test ports to reduce conflict and exposure. Do not make it the network resolver or point clients at it until availability, privacy, rollback, and LAN design have been reviewed.
+
+### Detection: documentation-only
+
+CrowdSec is intentionally not present as a Compose service. Review `crowdsec/README.md` and `acquis.example.yaml` first. A later change may introduce a `detection` profile only after approved log sources and detection-before-blocking procedures are documented.
+
+## 16. Stop the Stack
+
+Stop and remove the Compose containers and project networks while retaining named volumes:
+
+```bash
+docker compose down
+```
+
+Do not add the `-v` option unless deletion of named-volume data is explicitly intended, reviewed, and backed up.
+
+## 17. Update Workflow
+
+1. Read upstream release notes and security notices.
+2. Back up required configuration and named-volume data.
+3. Change one image tag or logical service group at a time.
+4. Render the configuration and review the diff.
+5. Pull the reviewed images, recreate services, and verify health.
+6. Record the validated versions and rollback decision.
+
+```bash
+docker compose --env-file .env config
+docker compose pull
+docker compose --env-file .env up -d
+docker compose ps
+docker compose logs --tail=50
+```
+
+## 18. Backup Notes
+
+The default stack stores persistent state in named volumes:
+
+- `uptime_kuma_data`
+- `prometheus_data`
+- `grafana_data`
+
+The optional DNS profile adds `adguard_work` and `adguard_conf`. Inspect volume metadata with `docker volume inspect <VOLUME_NAME>` and design a backup method that produces a consistent copy at `<BACKUP_TARGET>`.
+
+Do not commit volume data, database contents, archives, `.env`, dashboard credentials, or raw logs. A backup is not considered valid until an isolated restore test succeeds.
+
+## 19. Troubleshooting
+
+Start with read-only status and configuration checks:
+
+```bash
+docker compose --env-file .env config
+docker compose ps
+docker compose logs --tail=50 <SERVICE_NAME>
+ss -lnt
+df -h
+free -h
+```
+
+Common review questions:
+
+- Does `.env` still contain `<CHANGE_ME>`?
+- Is another local process using the selected loopback port?
+- Is the service repeatedly restarting?
+- Can Prometheus resolve the Docker service name?
+- Does the SSD have sufficient free space?
+- Did a recent image or configuration change introduce the failure?
+
+Keep troubleshooting notes sanitized and avoid pasting raw logs into Git.
+
+## 20. Operational Exercise 001 â€” Baseline Service Health Review
+
+- [ ] Confirm the four default containers are running.
+- [ ] Confirm Uptime Kuma is reachable through an SSH tunnel.
+- [ ] Confirm Prometheus can scrape Node Exporter.
+- [ ] Confirm Grafana can connect to Prometheus.
+- [ ] Review Docker restart counts.
+- [ ] Review disk usage and metrics-retention capacity.
+- [ ] Record sanitized results in `docs/lessons-learned.md`.
+- [ ] Open an incident note only if something abnormal is found.
+
+This exercise validates the baseline; it does not prove production readiness.
+
+## 21. What to Record in `docs/lessons-learned.md`
+
+Record:
+
+- The sanitized exercise date and scope.
+- Which default services started successfully.
+- Whether loopback bindings and SSH tunnels worked as intended.
+- Prometheus target status and Grafana datasource status.
+- Any restart, disk, memory, temperature, or log findings.
+- What was expected, what differed, and the next improvement.
+- Whether an incident note was required.
+
+Do not record real addresses, hostnames, usernames, credentials, DNS history, raw logs, or screenshots.

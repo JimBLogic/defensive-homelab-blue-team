@@ -16,7 +16,9 @@ This roadmap tracks a realistic progression from safe documentation to small def
 - [x] Document Prometheus metrics and retention planning.
 - [x] Document Node Exporter host-health planning.
 - [x] Document Grafana dashboard and sanitization planning.
+- [x] Prepare a local-only default Docker baseline under `deploy/`.
 - [ ] Deploy and validate Uptime Kuma as the first operational tool.
+- [ ] Complete Operational Exercise 001 and record sanitized results.
 - [ ] Define a small approved set of service checks and incident thresholds.
 - [ ] Add Prometheus, Node Exporter, and Grafana only after the first tool is stable.
 
@@ -54,4 +56,3 @@ This roadmap tracks a realistic progression from safe documentation to small def
 - [ ] Test Zeek in an external lab better suited to packet analysis.
 - [ ] Explore Wazuh through an external x86 deployment or limited agent-only path.
 - [ ] Keep Security Onion in an external x86 lab, not on the Raspberry Pi.
-

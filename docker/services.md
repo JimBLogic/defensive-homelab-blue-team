@@ -2,6 +2,8 @@
 
 This document tracks defensive tool candidates and the questions that must be answered before deployment. Inclusion here means evaluation or planning, not installation.
 
+The first testable default stack and setup instructions are available in [`deploy/`](../deploy/README.md). Optional profiles remain subject to the reviews documented below.
+
 ## Service Review Template
 
 | Question | Notes |
