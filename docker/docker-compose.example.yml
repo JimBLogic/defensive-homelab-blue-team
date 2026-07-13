@@ -1,0 +1,21 @@
+# Example Docker Compose file using placeholders only.
+# Do not commit real secrets, internal hostnames, private IP addresses, or production values.
+
+services:
+  example-service:
+    image: example/image:latest
+    container_name: example-service
+    restart: unless-stopped
+    environment:
+      - TZ=<TIMEZONE>
+      - EXAMPLE_SETTING=<PLACEHOLDER_VALUE>
+    ports:
+      - "<HOST_PORT>:<CONTAINER_PORT>"
+    volumes:
+      - ./data/example-service:/config
+    networks:
+      - homelab_internal
+
+networks:
+  homelab_internal:
+    driver: bridge
