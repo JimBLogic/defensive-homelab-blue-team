@@ -71,3 +71,47 @@ The goal is to demonstrate how I think, document, troubleshoot and improve syste
 ## Status
 
 Private preparation phase.
+
+## Repository Structure
+
+This repository is organized to make the homelab documentation easy to review, expand and sanitize before sharing publicly.
+
+### Core Documentation
+
+- [Project Overview](docs/project-overview.md) - Scope, safety rules and portfolio purpose.
+- [Architecture](docs/architecture.md) - High-level system design, trust boundaries and placeholders.
+- [Hardware](docs/hardware.md) - Hardware profile and operational considerations.
+- [Network Layout](docs/network-layout.md) - Sanitized network layout and access rules.
+- [Security Goals](docs/security-goals.md) - Defensive goals and recurring habits.
+- [Roadmap](docs/roadmap.md) - Planned documentation, service and security improvements.
+
+### Docker
+
+- [Services](docker/services.md) - Service review template and planned Docker services.
+- [Docker Compose Example](docker/docker-compose.example.yml) - Placeholder-only compose example.
+
+### Security Operations
+
+- [Hardening Checklist](security/hardening-checklist.md) - Host and Docker hardening starter checklist.
+- [Logging and Monitoring](security/logging-and-monitoring.md) - Log sources, monitoring goals and TODOs.
+- [Backup Strategy](security/backup-strategy.md) - Backup principles and planning table.
+- [Incident Response Notes](security/incident-response-notes.md) - Sanitized incident note template.
+
+### Bitcoin Security
+
+- [Bitcoin Node Lessons](bitcoin-security/bitcoin-node-lessons.md) - Operational and defensive lessons.
+- [Lightning Node Lessons](bitcoin-security/lightning-node-lessons.md) - Availability, backup and key management lessons.
+- [OPSEC Notes](bitcoin-security/opsec-notes.md) - Repository privacy and secret-handling rules.
+
+### Media Stack
+
+- [AdGuard Home](media-stack/adguard.md) - DNS filtering defensive value and security notes.
+- [Jellyfin](media-stack/jellyfin.md) - Media server defensive questions and TODOs.
+- [Jellyseerr](media-stack/jellyseerr.md) - Request management security considerations.
+- [Radarr and Sonarr](media-stack/radarr-sonarr.md) - Automation service risks and integration notes.
+- [OpenVPN](media-stack/openvpn.md) - Remote access defensive value and key protection notes.
+- [Media Stack Security Considerations](media-stack/security-considerations.md) - Shared risks and defensive practices.
+
+### Assets
+
+- [Diagrams Directory](assets/diagrams/) - Placeholder location for sanitized diagrams.
