@@ -2,6 +2,16 @@
 
 This page provides a consistent place to record practical learning as the homelab evolves. Entries should describe what was observed, why it matters defensively, and what will change next. Keep all examples sanitized.
 
+## Portfolio Progress Log — Defensive Homelab
+
+Completed PR #2: `Improve defensive homelab documentation depth`.
+
+This update improved the Raspberry Pi Defensive Homelab repository by adding deeper Blue Team documentation around sanitized architecture, trust boundaries, service exposure categories, hardening routines, logging and monitoring, backup verification, restore planning, incident response notes, and a realistic six-phase roadmap.
+
+The repository now better represents a practical junior SOC / Blue Team portfolio project focused on Linux, Docker, networking, defensive operations, documentation, backups, logs, and Bitcoin security lessons.
+
+Next step: complete one real but sanitized operational exercise, ideally a weekly log review, and record the result in `docs/lessons-learned.md`.
+
 ## Entry Format
 
 - **Context:** `<SANITIZED_ACTIVITY_OR_CHANGE>`
