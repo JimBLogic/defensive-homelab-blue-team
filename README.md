@@ -1,117 +1,56 @@
 # Raspberry Pi Defensive Homelab
 
-A practical defensive homelab project built around a Raspberry Pi 4 8GB and a 1TB SSD, focused on Linux, Docker, networking, monitoring, backups, hardening, logs, self-hosted services and Bitcoin security lessons.
+This repository documents a practical defensive homelab built around a Raspberry Pi 4 with 8GB RAM and SSD storage. It uses Linux, Docker, networking, self-hosted services, monitoring, backups, hardening, and Bitcoin security lessons to demonstrate how a small environment can be operated and improved with a Blue Team mindset.
 
-This project is part of my cybersecurity portfolio and documents how I design, maintain, secure and improve a small home infrastructure environment with a Blue Team mindset.
+The project is a learning portfolio. It shows structured thinking, safe documentation, troubleshooting habits, and incremental improvement without claiming to reproduce an enterprise SOC.
 
-## Main Goals
+## Why This Project Matters
 
-- Build and document a realistic self-hosted homelab.
-- Practice Linux administration and Docker-based service management.
-- Improve defensive security habits around logging, backups, updates and hardening.
-- Document network architecture and service exposure.
-- Apply Blue Team thinking to a real environment.
-- Connect previous Bitcoin and Lightning node experience with operational security lessons.
-- Create professional documentation useful for junior SOC / Blue Team roles.
+Running a service is only the starting point. Defensive operations require knowing what is exposed, who can administer it, which logs support an investigation, how updates are validated, and whether recovery works after a mistake or hardware failure. This repository makes those decisions visible and reviewable.
 
-## Hardware
+Self-hosted media services are included only as infrastructure examples for practicing Docker operations, access control, updates, logging, backups, and exposure review.
 
-- Raspberry Pi 4
-- 8GB RAM
-- 1TB SSD
-- Home network environment
+## Blue Team Learning Goals
 
-## Technical Areas
+- Maintain a clear host, service, data, and trust-boundary baseline.
+- Apply least privilege, secure access, and minimal exposure.
+- Review authentication, system, container, DNS, VPN, backup, and health events.
+- Practice evidence-based incident notes and follow-up actions.
+- Plan and test recovery rather than assuming a backup is usable.
+- Translate Bitcoin and Lightning operations into privacy, availability, custody, and recovery lessons.
 
-- Linux
-- Docker
-- Networking
-- DNS filtering
-- Backups
-- Monitoring
-- Logging
-- Hardening
-- Incident response notes
-- Bitcoin and Lightning security lessons
-- Self-hosted media services
+## Current Status
 
-## Services
+The documentation foundation is complete. Sanitized architecture, hardening, monitoring, backup, and incident-response guidance is in place. The next stage is to perform small operational exercises—such as a weekly log review, service exposure review, and isolated restore test—and record only sanitized results.
 
-Planned or documented services may include:
-
-- AdGuard Home
-- Jellyfin
-- Jellyseerr
-- Radarr
-- Sonarr
-- OpenVPN
-- Monitoring tools
-- Backup tooling
-- Security logging tools
-
-## Security Focus
-
-This project is not only about running services. The main focus is understanding how to operate them safely:
-
-- What is exposed?
-- What needs authentication?
-- What logs are available?
-- What happens if a disk fails?
-- How are backups handled?
-- How are updates managed?
-- What risks exist in a home network?
-- What lessons apply to SOC and Blue Team work?
-
-## Portfolio Purpose
-
-This repository is designed to show practical, hands-on experience rather than only listing courses or certifications.
-
-The goal is to demonstrate how I think, document, troubleshoot and improve systems over time.
-
-## Status
-
-Private preparation phase.
+Progress is tracked in the [roadmap](docs/roadmap.md).
 
 ## Repository Structure
 
-This repository is organized to make the homelab documentation easy to review, expand and sanitize before sharing publicly.
+| Area | Purpose |
+| --- | --- |
+| [`docs/`](docs/) | Project overview, architecture, hardware, network, goals, roadmap, and lessons learned. |
+| [`docker/`](docker/) | Service planning and a placeholder-only Compose example. |
+| [`security/`](security/) | Hardening, logging, backups, and incident response. |
+| [`bitcoin-security/`](bitcoin-security/) | Sanitized Bitcoin, Lightning, and OPSEC lessons. |
+| [`media-stack/`](media-stack/) | Infrastructure and security operations notes for self-hosted services. |
+| [`assets/diagrams/`](assets/diagrams/) | Future sanitized diagrams. |
 
-### Core Documentation
+### Key Documents
 
-- [Project Overview](docs/project-overview.md) - Scope, safety rules and portfolio purpose.
-- [Architecture](docs/architecture.md) - High-level system design, trust boundaries and placeholders.
-- [Hardware](docs/hardware.md) - Hardware profile and operational considerations.
-- [Network Layout](docs/network-layout.md) - Sanitized network layout and access rules.
-- [Security Goals](docs/security-goals.md) - Defensive goals and recurring habits.
-- [Roadmap](docs/roadmap.md) - Planned documentation, service and security improvements.
+- [Architecture and trust boundaries](docs/architecture.md)
+- [Hardening checklist](security/hardening-checklist.md)
+- [Logging and monitoring routine](security/logging-and-monitoring.md)
+- [Backup and restore strategy](security/backup-strategy.md)
+- [Incident response note template](security/incident-response-notes.md)
+- [Roadmap](docs/roadmap.md)
+- [Lessons learned](docs/lessons-learned.md)
 
-### Docker
+The [project overview](docs/project-overview.md), [network layout](docs/network-layout.md), [security goals](docs/security-goals.md), and service-specific pages provide supporting context.
 
-- [Services](docker/services.md) - Service review template and planned Docker services.
-- [Docker Compose Example](docker/docker-compose.example.yml) - Placeholder-only compose example.
+## Privacy and Sanitization
 
-### Security Operations
+This repository must not contain real public or private IP addresses, LAN details, hostnames, usernames, domains, credentials, API keys, tokens, seed or recovery phrases, wallet data, VPN configuration, firewall rules, raw logs, or screenshots from the live environment.
 
-- [Hardening Checklist](security/hardening-checklist.md) - Host and Docker hardening starter checklist.
-- [Logging and Monitoring](security/logging-and-monitoring.md) - Log sources, monitoring goals and TODOs.
-- [Backup Strategy](security/backup-strategy.md) - Backup principles and planning table.
-- [Incident Response Notes](security/incident-response-notes.md) - Sanitized incident note template.
+Documentation uses placeholders such as `<HOMELAB_HOST>`, `<LAN_SUBNET>`, `<ADMIN_WORKSTATION>`, `<SERVICE_PORT>`, `<BACKUP_TARGET>`, `<VPN_ACCESS>`, and `<REDACTED>`. Sensitive operational configuration and evidence remain outside the repository.
 
-### Bitcoin Security
-
-- [Bitcoin Node Lessons](bitcoin-security/bitcoin-node-lessons.md) - Operational and defensive lessons.
-- [Lightning Node Lessons](bitcoin-security/lightning-node-lessons.md) - Availability, backup and key management lessons.
-- [OPSEC Notes](bitcoin-security/opsec-notes.md) - Repository privacy and secret-handling rules.
-
-### Media Stack
-
-- [AdGuard Home](media-stack/adguard.md) - DNS filtering defensive value and security notes.
-- [Jellyfin](media-stack/jellyfin.md) - Media server defensive questions and TODOs.
-- [Jellyseerr](media-stack/jellyseerr.md) - Request management security considerations.
-- [Radarr and Sonarr](media-stack/radarr-sonarr.md) - Automation service risks and integration notes.
-- [OpenVPN](media-stack/openvpn.md) - Remote access defensive value and key protection notes.
-- [Media Stack Security Considerations](media-stack/security-considerations.md) - Shared risks and defensive practices.
-
-### Assets
-
-- [Diagrams Directory](assets/diagrams/) - Placeholder location for sanitized diagrams.
