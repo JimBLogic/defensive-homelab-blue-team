@@ -1,0 +1,6 @@
+# Example only. Copy to acquis.yaml after selecting an authorized log source.
+# No CrowdSec service or remediation bouncer is enabled by this baseline.
+filenames:
+  - "<LOG_PATH>"
+labels:
+  type: "<LOG_TYPE>"

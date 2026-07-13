@@ -35,7 +35,9 @@ Selection considers Raspberry Pi resources, required privileges, data collection
 
 The documentation and privacy baseline is established. Tool-selection, architecture, hardening, monitoring, backup, and incident-response guidance are documented. Tools are candidates until an installation and validation exercise is completed and recorded.
 
-The next operational exercise is a sanitized [Weekly Homelab Log Review](security/logging-and-monitoring.md#first-operational-exercise-candidate). Progress is tracked in the [roadmap](docs/roadmap.md).
+The first testable, local-only Docker baseline now lives in [`deploy/`](deploy/README.md). It starts Uptime Kuma, Prometheus, Node Exporter, and Grafana by default; optional services remain disabled until reviewed.
+
+The next operational exercise is the sanitized [Baseline Service Health Review](deploy/README.md). Progress is tracked in the [roadmap](docs/roadmap.md).
 
 ## Repository Structure
 
@@ -43,6 +45,7 @@ The next operational exercise is a sanitized [Weekly Homelab Log Review](securit
 | --- | --- |
 | [`docs/`](docs/) | Project scope, architecture, hardware, network, roadmap, and lessons learned. |
 | [`blue-team-tools/`](blue-team-tools/) | Tool selection and concise defensive evaluation pages. |
+| [`deploy/`](deploy/) | Testable Raspberry Pi Docker baseline and local-first setup guide. |
 | [`docker/`](docker/) | Service review guidance and a placeholder-only Compose example. |
 | [`security/`](security/) | Hardening, logging, backups, and incident response. |
 | [`bitcoin-security/`](bitcoin-security/) | Sanitized Bitcoin, Lightning, and OPSEC lessons. |
@@ -52,6 +55,7 @@ The next operational exercise is a sanitized [Weekly Homelab Log Review](securit
 
 - [Architecture and trust boundaries](docs/architecture.md)
 - [Blue Team tool selection](blue-team-tools/tool-selection.md)
+- [Raspberry Pi Docker baseline](deploy/README.md)
 - [Hardening checklist](security/hardening-checklist.md)
 - [Logging and monitoring routine](security/logging-and-monitoring.md)
 - [Backup and restore strategy](security/backup-strategy.md)
@@ -64,4 +68,3 @@ The next operational exercise is a sanitized [Weekly Homelab Log Review](securit
 This repository must not contain real public or private IP addresses, LAN details, hostnames, usernames, private domains, credentials, API keys, tokens, seed or recovery phrases, wallet data, VPN configuration, firewall rules, raw logs, or screenshots from the live environment.
 
 Documentation uses placeholders such as `<HOMELAB_HOST>`, `<LAN_SUBNET>`, `<ADMIN_WORKSTATION>`, `<SERVICE_PORT>`, `<LOCAL_ONLY>`, `<VPN_ONLY>`, `<BACKUP_TARGET>`, and `<REDACTED>`. Real configuration and operational evidence remain outside the repository.
-

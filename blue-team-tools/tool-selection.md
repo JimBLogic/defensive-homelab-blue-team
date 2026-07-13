@@ -4,6 +4,8 @@ This document evaluates open-source defensive tools for a Raspberry Pi 4 with 8G
 
 The list is a decision record, not an installation plan. Each tool should be reviewed, deployed, and validated separately.
 
+A minimal first baseline is now prepared under [`deploy/`](../deploy/README.md). Only Uptime Kuma, Prometheus, Node Exporter, and Grafana start by default; cAdvisor and AdGuard Home require explicit profiles, and CrowdSec remains documentation-only.
+
 ## Selection Principles
 
 - Prefer one clear learning objective per deployment.

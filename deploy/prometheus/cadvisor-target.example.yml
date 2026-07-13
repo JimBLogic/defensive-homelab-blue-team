@@ -1,0 +1,5 @@
+# Copy this file to targets/cadvisor.yml only after reviewing the cAdvisor profile.
+- targets:
+    - cadvisor:8080
+  labels:
+    profile: containers
