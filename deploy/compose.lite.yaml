@@ -1,0 +1,17 @@
+services:
+  uptime-kuma:
+    mem_limit: 384m
+    cpus: "0.50"
+    pids_limit: 256
+  prometheus:
+    mem_limit: 512m
+    cpus: "0.75"
+    pids_limit: 256
+  node-exporter:
+    mem_limit: 128m
+    cpus: "0.25"
+    pids_limit: 128
+  grafana:
+    mem_limit: 512m
+    cpus: "0.75"
+    pids_limit: 256
