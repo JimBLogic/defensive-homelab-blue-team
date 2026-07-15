@@ -13,8 +13,10 @@ backups/
 **/backups/
 screenshots/
 **/screenshots/
-
 # Local deployment files created after review
 deploy/crowdsec/acquis.yaml
 deploy/prometheus/targets/*.yml
 !deploy/prometheus/targets/.gitkeep
+# Compose v2 local deployment state
+!deploy/prometheus/targets/*.example.yml
+*.bak

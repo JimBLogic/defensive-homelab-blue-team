@@ -58,7 +58,7 @@ disk_available_gib=$((disk_available_kib / 1024 / 1024))
 printf 'INFO: available_disk_gib=%s path=%s\n' "$disk_available_gib" "$deploy_dir"
 
 required_files=(
-  docker-compose.yml
+  compose.yaml
   prometheus/prometheus.yml
   grafana/provisioning/datasources/prometheus.yml
   .env
@@ -79,7 +79,7 @@ elif [[ -f .env ]]; then
 fi
 
 if (( failures == 0 )); then
-  docker compose --env-file .env config >/dev/null
+  docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config >/dev/null
   pass "Docker Compose configuration renders successfully"
   printf 'Preflight checks completed successfully.\n'
 else

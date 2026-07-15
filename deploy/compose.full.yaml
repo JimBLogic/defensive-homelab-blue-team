@@ -1,0 +1,71 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+x-security: &default-security
+  security_opt:
+    - no-new-privileges:true
+services:
+  uptime-kuma:
+    mem_limit: 512m
+    cpus: "0.75"
+    pids_limit: 256
+  prometheus:
+    mem_limit: 1024m
+    cpus: "1.25"
+    pids_limit: 384
+  node-exporter:
+    mem_limit: 128m
+    cpus: "0.25"
+    pids_limit: 128
+  grafana:
+    mem_limit: 768m
+    cpus: "1.00"
+    pids_limit: 384
+  cadvisor:
+    image: ${CADVISOR_IMAGE}
+    restart: unless-stopped
+    read_only: true
+    privileged: true # cAdvisor needs host cgroup/container visibility; no Docker socket is mounted
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks: [metrics]
+    mem_limit: 384m
+    cpus: "0.75"
+    pids_limit: 256
+    logging: *default-logging
+    <<: *default-security
+  adguard-home:
+    image: ${ADGUARD_HOME_IMAGE}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ADGUARD_ADMIN_PORT:-3002}:3000"
+      - "127.0.0.1:${ADGUARD_DNS_PORT:-5353}:53/tcp"
+      - "127.0.0.1:${ADGUARD_DNS_PORT:-5353}:53/udp"
+    volumes: [adguard_work:/opt/adguardhome/work, adguard_conf:/opt/adguardhome/conf]
+    networks: [dns]
+    mem_limit: 384m
+    cpus: "0.50"
+    pids_limit: 256
+    logging: *default-logging
+    <<: *default-security
+  crowdsec:
+    image: ${CROWDSEC_IMAGE}
+    profiles: [detection]
+    restart: unless-stopped
+    environment:
+      COLLECTIONS: ""
+    volumes:
+      - crowdsec_data:/var/lib/crowdsec/data
+      - crowdsec_config:/etc/crowdsec
+      - ./crowdsec/acquis.example.yaml:/etc/crowdsec/acquis.yaml:ro
+    networks: [detection]
+    mem_limit: 256m
+    cpus: "0.50"
+    pids_limit: 256
+    logging: *default-logging
+    <<: *default-security

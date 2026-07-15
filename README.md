@@ -1,3 +1,27 @@
+# Reproducible LITE/FULL Deployment Foundation
+
+The current Compose foundation supports two reproducible modes from `deploy/`:
+
+- **LITE**: Uptime Kuma, Prometheus, Node Exporter, and Grafana OSS for Raspberry Pi 4 systems with approximately 4 GB RAM.
+- **FULL**: LITE plus cAdvisor and AdGuard Home in localhost-only test mode for Raspberry Pi 4 systems with 8 GB RAM and SSD storage.
+
+Use `deploy/compose.yaml` with either `deploy/compose.lite.yaml` or `deploy/compose.full.yaml`. Wazuh manager, indexer, and dashboard remain external; Tailscale and a future Wazuh agent remain native host integrations.
+
+```bash
+cd deploy
+cp .env.example .env
+$EDITOR .env
+./scripts/validate-repository.sh
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
+```
+
+For FULL, review resource and DNS notes first, then use `-f compose.yaml -f compose.full.yaml`.
+
+See [LITE vs FULL](docs/lite-vs-full.md), [reproducibility audit](docs/reproducibility-audit.md), [version matrix](docs/version-matrix.md), and [migration plan](docs/migration-plan.md).
+
+---
+
 # Defensive Homelab Blue Team Lab
 
 This repository documents a Raspberry Pi Blue Team lab built around a Raspberry Pi 4 with 8GB RAM and SSD storage. It is a Docker-based monitoring and security operations portfolio project focused on Linux, network visibility, service health, metrics, logging, alerting, hardening, backups, incident response, and Bitcoin security lessons.

@@ -17,7 +17,7 @@ fail() {
 
 required_files=(
   .env
-  docker-compose.yml
+  compose.yaml
   prometheus/prometheus.yml
   grafana/provisioning/datasources/prometheus.yml
 )
@@ -35,10 +35,10 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-docker compose --env-file .env config >/dev/null
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config >/dev/null
 pass "Docker Compose configuration renders successfully"
 
-running_services="$(docker compose --env-file .env ps --services --filter status=running)"
+running_services="$(docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps --services --filter status=running)"
 expected_services=(uptime-kuma prometheus node-exporter grafana)
 
 for service in "${expected_services[@]}"; do

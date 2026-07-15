@@ -1,3 +1,40 @@
+# Reproducible Compose File Set
+
+This deployment now uses the Compose v2 file set below instead of the previous single `docker-compose.yml` entry point:
+
+- `compose.yaml` for shared services, networks, volumes, private bindings, logging, healthchecks, and optional profiles.
+- `compose.lite.yaml` for conservative LITE resource settings.
+- `compose.full.yaml` for FULL resource settings and enabling cAdvisor plus AdGuard Home test mode.
+
+Existing named volumes are preserved: `uptime_kuma_data`, `prometheus_data`, `grafana_data`, `adguard_work`, `adguard_conf`, `crowdsec_data`, and `crowdsec_config`.
+
+## LITE command
+
+```bash
+cd deploy
+cp .env.example .env
+$EDITOR .env
+./scripts/validate-repository.sh
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
+```
+
+## FULL command
+
+```bash
+cd deploy
+cp .env.example .env
+$EDITOR .env
+cp prometheus/cadvisor-target.example.yml prometheus/targets/cadvisor.yml
+./scripts/validate-repository.sh
+docker compose --env-file .env -f compose.yaml -f compose.full.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.full.yaml up -d
+```
+
+Do not use `docker compose down -v` casually because it deletes persistent named volumes. Return to the previous deployment by checking out the previous Git commit and rendering the configuration before restart.
+
+---
+
 # Raspberry Pi 4 Blue Team Docker Baseline
 
 ## 1. Purpose
@@ -93,10 +130,10 @@ Edit `.env` locally and replace every `<CHANGE_ME>` value. The real `.env` is ig
 Review the rendered configuration before starting containers:
 
 ```bash
-docker compose --env-file .env config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
 ```
 
-The example uses convenient image tags for initial testing. Pin each image to a validated version or digest after the first successful review; do not assume `latest` has been production-validated.
+The example uses explicit candidate image pins from `.env.example`. Verify ARM64 manifests on the Raspberry Pi before claiming runtime compatibility.
 
 ## 9. Start the Default Stack
 
@@ -104,7 +141,7 @@ Run the preflight check, then start only the default services:
 
 ```bash
 ./scripts/preflight-check.sh
-docker compose --env-file .env up -d
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
 ```
 
 No optional profile is enabled by this command.
@@ -114,8 +151,8 @@ No optional profile is enabled by this command.
 Review service state and recent logs:
 
 ```bash
-docker compose ps
-docker compose logs --tail=50
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml logs --tail=50
 ./scripts/verify-stack.sh
 ```
 
@@ -178,7 +215,7 @@ Activate its Prometheus target and start the profile:
 
 ```bash
 cp prometheus/cadvisor-target.example.yml prometheus/targets/cadvisor.yml
-docker compose --env-file .env --profile containers up -d
+docker compose --env-file .env -f compose.yaml -f compose.full.yaml up -d
 ```
 
 The generated target file is ignored by Git. cAdvisor has no published port and is reachable only through the internal `metrics` network.
@@ -188,7 +225,7 @@ The generated target file is ignored by Git. cAdvisor has no published port and 
 AdGuard Home is a local test service only. It binds the administration interface and test DNS listener to localhost by default:
 
 ```bash
-docker compose --env-file .env --profile dns up -d
+docker compose --env-file .env -f compose.yaml -f compose.full.yaml up -d
 ```
 
 DNS normally uses port 53, but this baseline uses configurable localhost test ports to reduce conflict and exposure. Do not make it the network resolver or point clients at it until availability, privacy, rollback, and LAN design have been reviewed.
@@ -217,11 +254,11 @@ Do not add the `-v` option unless deletion of named-volume data is explicitly in
 6. Record the validated versions and rollback decision.
 
 ```bash
-docker compose --env-file .env config
-docker compose pull
-docker compose --env-file .env up -d
-docker compose ps
-docker compose logs --tail=50
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml pull
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml logs --tail=50
 ```
 
 ## 18. Backup Notes
@@ -241,9 +278,9 @@ Do not commit volume data, database contents, archives, `.env`, dashboard creden
 Start with read-only status and configuration checks:
 
 ```bash
-docker compose --env-file .env config
-docker compose ps
-docker compose logs --tail=50 <SERVICE_NAME>
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml logs --tail=50 <SERVICE_NAME>
 ss -lnt
 df -h
 free -h
