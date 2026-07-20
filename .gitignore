@@ -2,6 +2,20 @@
 .env
 **/.env
 !**/.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.kdbx
+*.ovpn
+
+# Packet captures and local databases may contain hostnames, IPs, payloads or credentials
+*.pcap
+*.pcapng
+*.cap
+*.sqlite
+*.sqlite3
+*.db
 
 # Runtime data, logs, backups, and screenshots
 *.log
@@ -13,6 +27,7 @@ backups/
 **/backups/
 screenshots/
 **/screenshots/
+
 # Local deployment files created after review
 deploy/crowdsec/acquis.yaml
 deploy/prometheus/targets/*.yml
@@ -20,3 +35,9 @@ deploy/prometheus/targets/*.yml
 # Compose v2 local deployment state
 !deploy/prometheus/targets/*.example.yml
 *.bak
+
+# Editor and operating-system artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
