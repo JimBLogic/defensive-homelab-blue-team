@@ -25,6 +25,11 @@ jobs:
           persist-credentials: false
           show-progress: false
 
+      - name: Install validation dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ripgrep
+
       - name: Validate public repository boundary
         id: validation
         continue-on-error: true
