@@ -108,14 +108,22 @@ After the repository and `.env` are prepared, the included preflight script chec
 
 ## 7. Repository Setup
 
-Clone the private repository using the approved authentication method:
+Clone the public repository over HTTPS or SSH using GitHub's standard methods:
 
 ```bash
-git clone <REPOSITORY_URL>
+git clone https://github.com/JimBLogic/defensive-homelab-blue-team.git
 cd defensive-homelab-blue-team/deploy
 ```
 
-Do not place tokens or credentials in a committed remote URL, shell history, or documentation.
+The repository is public, but the live homelab is not. Do not place tokens, credentials, private remote URLs, real hostnames, LAN details or operational evidence in commits, shell history, issues or documentation.
+
+Before publishing a branch, run:
+
+```bash
+./scripts/validate-repository.sh
+```
+
+The validator checks tracked filenames, common secret patterns, Compose bindings, image tags, placeholders and repository syntax. It is a guardrail, not proof that a commit contains no sensitive information; review the full diff manually as well.
 
 ## 8. Environment File Setup
 
@@ -239,10 +247,10 @@ CrowdSec is intentionally not present as a Compose service. Review `crowdsec/REA
 Stop and remove the Compose containers and project networks while retaining named volumes:
 
 ```bash
-docker compose down
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml down
 ```
 
-Do not add the `-v` option unless deletion of named-volume data is explicitly intended, reviewed, and backed up.
+Use the FULL file set instead when that mode is running. Do not append `-v` unless the named volumes have been backed up and intentional deletion has been approved.
 
 ## 17. Update Workflow
 
@@ -297,7 +305,7 @@ Common review questions:
 
 Keep troubleshooting notes sanitized and avoid pasting raw logs into Git.
 
-## 20. Operational Exercise 001 â€” Baseline Service Health Review
+## 20. Operational Exercise 001 — Baseline Service Health Review
 
 - [ ] Confirm the four default containers are running.
 - [ ] Confirm Uptime Kuma is reachable through an SSH tunnel.
