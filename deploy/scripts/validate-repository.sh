@@ -5,7 +5,11 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 deploy_dir="$repo_root/deploy"
 failures=0
 
-pass() { printf 'PASS: %s\n' "$1"; }
+pass() {
+  if [[ "${VALIDATION_QUIET:-0}" != "1" ]]; then
+    printf 'PASS: %s\n' "$1"
+  fi
+}
 fail() { printf 'FAIL: %s\n' "$1" >&2; failures=$((failures + 1)); }
 skip() { printf 'SKIPPED — environment unavailable: %s\n' "$1"; }
 require_file() {
@@ -164,7 +168,7 @@ while IFS= read -r -d '' script; do
 done < <(find "$repo_root" -path '*/.git' -prune -o -name '*.sh' -print0)
 
 if command -v ruby >/dev/null 2>&1; then
-  ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_file(f, aliases: true); puts "PASS: YAML parses: #{f}" }' \
+  ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_file(f, aliases: true); puts "PASS: YAML parses: #{f}" unless ENV["VALIDATION_QUIET"] == "1" }' \
     "$repo_root/deploy/compose.yaml" \
     "$repo_root/deploy/compose.lite.yaml" \
     "$repo_root/deploy/compose.full.yaml" \
@@ -173,6 +177,7 @@ if command -v ruby >/dev/null 2>&1; then
     || fail 'YAML parsing failed'
 elif command -v python3 >/dev/null 2>&1; then
   python3 - "$repo_root" <<'PY' || fail 'YAML parsing failed'
+import os
 import pathlib
 import sys
 
@@ -191,7 +196,8 @@ for relative in [
     'deploy/grafana/provisioning/datasources/prometheus.yml',
 ]:
     yaml.safe_load((root / relative).read_text())
-    print(f'PASS: YAML parses: {relative}')
+    if os.getenv('VALIDATION_QUIET') != '1':
+        print(f'PASS: YAML parses: {relative}')
 PY
 else
   skip 'YAML parser unavailable'
