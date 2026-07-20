@@ -251,3 +251,83 @@ docker compose --env-file .env -f compose.yaml -f compose.lite.yaml down
 ```
 
 Use the FULL file set instead when that mode is running. Do not append `-v` unless the named volumes have been backed up and intentional deletion has been approved.
+
+## 17. Update Workflow
+
+1. Read upstream release notes and security notices.
+2. Back up required configuration and named-volume data.
+3. Change one image tag or logical service group at a time.
+4. Render the configuration and review the diff.
+5. Pull the reviewed images, recreate services, and verify health.
+6. Record the validated versions and rollback decision.
+
+```bash
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml pull
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml logs --tail=50
+```
+
+## 18. Backup Notes
+
+The default stack stores persistent state in named volumes:
+
+- `uptime_kuma_data`
+- `prometheus_data`
+- `grafana_data`
+
+The optional DNS profile adds `adguard_work` and `adguard_conf`. Inspect volume metadata with `docker volume inspect <VOLUME_NAME>` and design a backup method that produces a consistent copy at `<BACKUP_TARGET>`.
+
+Do not commit volume data, database contents, archives, `.env`, dashboard credentials, or raw logs. A backup is not considered valid until an isolated restore test succeeds.
+
+## 19. Troubleshooting
+
+Start with read-only status and configuration checks:
+
+```bash
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml logs --tail=50 <SERVICE_NAME>
+ss -lnt
+df -h
+free -h
+```
+
+Common review questions:
+
+- Does `.env` still contain `<CHANGE_ME>`?
+- Is another local process using the selected loopback port?
+- Is the service repeatedly restarting?
+- Can Prometheus resolve the Docker service name?
+- Does the SSD have sufficient free space?
+- Did a recent image or configuration change introduce the failure?
+
+Keep troubleshooting notes sanitized and avoid pasting raw logs into Git.
+
+## 20. Operational Exercise 001 — Baseline Service Health Review
+
+- [ ] Confirm the four default containers are running.
+- [ ] Confirm Uptime Kuma is reachable through an SSH tunnel.
+- [ ] Confirm Prometheus can scrape Node Exporter.
+- [ ] Confirm Grafana can connect to Prometheus.
+- [ ] Review Docker restart counts.
+- [ ] Review disk usage and metrics-retention capacity.
+- [ ] Record sanitized results in `docs/lessons-learned.md`.
+- [ ] Open an incident note only if something abnormal is found.
+
+This exercise validates the baseline; it does not prove production readiness.
+
+## 21. What to Record in `docs/lessons-learned.md`
+
+Record:
+
+- The sanitized exercise date and scope.
+- Which default services started successfully.
+- Whether loopback bindings and SSH tunnels worked as intended.
+- Prometheus target status and Grafana datasource status.
+- Any restart, disk, memory, temperature, or log findings.
+- What was expected, what differed, and the next improvement.
+- Whether an incident note was required.
+
+Do not record real addresses, hostnames, usernames, credentials, DNS history, raw logs, or screenshots.
