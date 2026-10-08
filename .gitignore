@@ -1,6 +1,8 @@
 # Local environment files and secrets
 .env
 **/.env
+.env.*
+**/.env.*
 !**/.env.example
 *.key
 *.pem
@@ -27,6 +29,15 @@ backups/
 **/backups/
 screenshots/
 **/screenshots/
+
+# Collection output must stay outside the checkout; ignore accidental copies.
+private-evidence/
+**/private-evidence/
+*health-review*.json
+*.evtx
+*.etl
+__pycache__/
+*.pyc
 
 # Local deployment files created after review
 deploy/crowdsec/acquis.yaml

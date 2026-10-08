@@ -3,6 +3,8 @@ set -euo pipefail
 
 deploy_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$deploy_dir"
+mode="${1:-lite}"
+case "$mode" in lite|full) ;; *) printf 'Usage: preflight-check.sh [lite|full]\n' >&2; exit 2 ;; esac
 
 failures=0
 
@@ -55,7 +57,7 @@ fi
 
 disk_available_kib="$(df -Pk "$deploy_dir" | awk 'NR==2 {print $4}')"
 disk_available_gib=$((disk_available_kib / 1024 / 1024))
-printf 'INFO: available_disk_gib=%s path=%s\n' "$disk_available_gib" "$deploy_dir"
+printf 'INFO: checkout_filesystem_available_disk_gib=%s\n' "$disk_available_gib"
 
 required_files=(
   compose.yaml
@@ -72,14 +74,17 @@ for required_file in "${required_files[@]}"; do
   fi
 done
 
-if [[ -f .env ]] && grep -Eq '<CHANGE_ME>|<PLACEHOLDER_VALUE>' .env; then
+if [[ -f .env ]] && grep -Eq '<[^>]+>' .env; then
   fail ".env still contains placeholder credentials"
 elif [[ -f .env ]]; then
   pass ".env does not contain known placeholder credentials"
 fi
 
 if (( failures == 0 )); then
-  docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config >/dev/null
+  if ! docker compose --env-file .env -f compose.yaml -f "compose.$mode.yaml" config --quiet >/dev/null 2>&1; then
+    fail 'Docker Compose configuration failed; inspect privately'
+    exit 1
+  fi
   pass "Docker Compose configuration renders successfully"
   printf 'Preflight checks completed successfully.\n'
 else

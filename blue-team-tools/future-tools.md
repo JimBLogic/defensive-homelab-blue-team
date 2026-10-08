@@ -2,6 +2,8 @@
 
 ## Purpose
 
+The initial SIEM choice is [Windows / Sysmon → external Wazuh](../docs/siem-telemetry-roadmap.md), subject to resource/isolation gates. All other candidates below are deferred options, not a deployment checklist.
+
 Record tools that may add value after the lightweight baseline is stable, while explaining why they are not first-phase Raspberry Pi deployments.
 
 ## Why They May Fit Later

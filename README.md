@@ -1,94 +1,73 @@
-# Reproducible LITE/FULL Deployment Foundation
+# Defensive Homelab Blue Team
 
-The current Compose foundation supports two reproducible modes from `deploy/`:
+**Deployment-ready defensive baseline · operational validation in progress**
 
-- **LITE**: Uptime Kuma, Prometheus, Node Exporter, and Grafana OSS for Raspberry Pi 4 systems with approximately 4 GB RAM.
-- **FULL**: LITE plus cAdvisor and AdGuard Home in localhost-only test mode for Raspberry Pi 4 systems with 8 GB RAM and SSD storage.
+A small Raspberry Pi 4 / Docker learning lab for service-health review, Linux telemetry, hardening and evidence-based incident triage. The target is demonstrable Junior SOC / Blue Team practice. **No completed live operational exercise is published yet.**
 
-Use `deploy/compose.yaml` with either `deploy/compose.lite.yaml` or `deploy/compose.full.yaml`. Wazuh manager, indexer, and dashboard remain external; Tailscale and a future Wazuh agent remain native host integrations.
+| Recruiter question | Inspectable answer |
+| --- | --- |
+| What is this? | A reproducible defensive monitoring baseline for a Raspberry Pi 4 with SSD storage. |
+| What is running? | **Not verified on the homelab.** The default configuration defines Uptime Kuma, Prometheus, Node Exporter and Grafana. Configuration is not proof of deployment. |
+| What have I actually operated? | No live operation is evidenced in this repository yet. Exercise 001 has an executable review procedure and remains **IN PROGRESS / NOT VERIFIED**. |
+| What security decisions did I make? | Loopback dashboard bindings, an internal metrics network, rotating logs, explicit image tags, excluded secrets, bounded resources, and disabled optional profiles. Privilege exceptions are documented. |
+| What evidence can I inspect? | Source configuration and automated repository checks today; sanitized operational reports only after real execution and human review. |
+| What is still planned? | Windows / Sysmon telemetry, one external Wazuh learning environment, queries, alert triage, an incident note and detection tuning. Exercises 002–005 are **PLANNED**. |
+
+## Operational evidence
+
+**None published yet.** This section will link only to exercises actually performed on the authorized lab, with dated, sanitized findings and unresolved checks stated explicitly. Templates, synthetic tests and CI checks do not count as live operational evidence.
+
+## Exercise queue
+
+| Exercise | Status | Deliverable |
+| --- | --- | --- |
+| [001 — Baseline Service Health Review](exercises/001-baseline-health-review/README.md) | IN PROGRESS / NOT VERIFIED | Read-only collection, manual review, findings and security-boundary validation. |
+| [002 — Authentication triage](exercises/002-authentication-triage/README.md) | PLANNED | Correlate failed and successful logons with approved test activity. |
+| [003 — Process / PowerShell investigation](exercises/003-process-or-powershell-investigation/README.md) | PLANNED | Reconstruct a process tree and justify classification. |
+| [004 — Network / DNS investigation](exercises/004-network-dns-investigation/README.md) | PLANNED | Correlate controlled DNS / network telemetry with a process. |
+| [005 — Detection-rule tuning](exercises/005-detection-rule-tuning/README.md) | PLANNED | Compare a rule before and after a narrow, tested change. |
+
+All investigations use the [same case template](exercises/_investigation-template.md). ATT&CK mappings require observed behavior, supporting telemetry and stated confidence; a service-health review normally has no ATT&CK mapping.
+
+## Baseline and security decisions
+
+- **LITE** supplies the four core services with conservative resource limits. **FULL** increases limits; cAdvisor (`containers`), AdGuard Home (`dns`) and CrowdSec (`detection`) still require explicit profiles and prior review.
+- Dashboards bind to `127.0.0.1`; Node Exporter and cAdvisor publish no host ports. SSH forwarding is the documented administrative path. These declarations still need runtime and host/firewall verification.
+- `no-new-privileges`, explicit version tags and JSON log rotation are retained. Tags are candidate pins, not immutable digests or proof of ARM64 compatibility.
+- cAdvisor's privileged mode and host mounts are a high-risk exception. A read-only `/var/run` mount can expose the Docker socket. It stays disabled for Exercise 001; Docker's native status and resource commands are sufficient.
+- Node Exporter's host PID namespace and read-only host root are also an explicit exception. [Runtime exceptions and stop conditions](security/runtime-exceptions.md) explain both decisions.
+- Real configuration, credentials, raw logs, DNS histories, packet captures and screenshots stay private. Only reviewed, minimized summaries belong here.
+
+## Run the next review
+
+Follow the [deployment guide](deploy/README.md), then run this **on the authorized homelab host** using the same mode as the deployed stack:
 
 ```bash
 cd deploy
-cp .env.example .env
-$EDITOR .env
-./scripts/validate-repository.sh
-docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
-docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
+./scripts/preflight-check.sh lite
+./scripts/verify-stack.sh lite
+python3 scripts/baseline-health-review.py --mode lite --output /tmp/baseline-health-review.json
 ```
 
-For FULL, review resource and DNS notes first, then use `-f compose.yaml -f compose.full.yaml`.
+The collector does not start, stop, install or reconfigure services. It projects known fields into a sanitized report, refuses output inside the checkout, suppresses raw errors and never auto-completes an exercise. Exit code `2` means incomplete/manual checks; `1` means a failed check. Review the report and the private UI/logs, then finish [001's completion criteria](exercises/001-baseline-health-review/README.md).
 
-See [LITE vs FULL](docs/lite-vs-full.md), [reproducibility audit](docs/reproducibility-audit.md), [version matrix](docs/version-matrix.md), and [migration plan](docs/migration-plan.md).
+## Repository checks and learning path
 
----
+```bash
+./deploy/scripts/validate-repository.sh
+python3 -m unittest discover -s tests -v
+```
 
-# Defensive Homelab Blue Team Lab
+Compose rendering requires Docker Compose; use `REQUIRE_COMPOSE=1` to fail if it is unavailable. [Validation record](docs/validation-2026-10-08.md) separates repository checks from unverified deployment. [SIEM / telemetry roadmap](docs/siem-telemetry-roadmap.md) defines one initial Windows + Sysmon → external Wazuh path. Other platforms remain deferred.
 
-This repository documents a Raspberry Pi Blue Team lab built around a Raspberry Pi 4 with 8GB RAM and SSD storage. It is a Docker-based monitoring and security operations portfolio project focused on Linux, network visibility, service health, metrics, logging, alerting, hardening, backups, incident response, and Bitcoin security lessons.
-
-The project demonstrates practical junior SOC / Blue Team thinking through careful tool selection, sanitized architecture, repeatable review routines, and small operational exercises. It does not claim to reproduce an enterprise SOC.
-
-## Why This Project Matters
-
-Defensive work starts with understanding what should be running, what is exposed, which events are useful, and how failures are investigated and recovered. This repository documents those decisions before deployment and records how controls are validated over time.
-
-## Blue Team Learning Goals
-
-- Establish a clear host, container, service, and trust-boundary baseline.
-- Monitor availability, Linux host health, container behavior, and DNS security events.
-- Practice log review, metrics interpretation, alert triage, and incident documentation.
-- Apply least privilege, local-only management access, and minimal service exposure.
-- Validate backups and restores instead of assuming recovery will work.
-- Translate Bitcoin and Lightning operations into privacy, availability, custody, and recovery lessons.
-
-## Blue Team Tooling Direction
-
-The lab evaluates open-source tools before installing them. Current first-phase candidates include:
-
-- Uptime Kuma for service availability checks.
-- Prometheus and Node Exporter for metrics and Linux host visibility.
-- Grafana for operational dashboards.
-- A carefully selected Docker/container monitoring approach.
-- CrowdSec for future log-based detection and response practice.
-- AdGuard Home for DNS filtering and privacy-aware DNS security review.
-- Future IDS, log aggregation, and SIEM candidates for a later or external lab.
-
-Selection considers Raspberry Pi resources, required privileges, data collection, exposure, maintenance, and portfolio value. See the [tool-selection rationale](blue-team-tools/tool-selection.md).
-
-## Current Status
-
-The documentation and privacy baseline is established. Tool-selection, architecture, hardening, monitoring, backup, and incident-response guidance are documented. Tools are candidates until an installation and validation exercise is completed and recorded.
-
-The first testable, local-only Docker baseline now lives in [`deploy/`](deploy/README.md). It starts Uptime Kuma, Prometheus, Node Exporter, and Grafana by default; optional services remain disabled until reviewed.
-
-The next operational exercise is the sanitized [Baseline Service Health Review](deploy/README.md). Progress is tracked in the [roadmap](docs/roadmap.md).
-
-## Repository Structure
-
-| Area | Purpose |
-| --- | --- |
-| [`docs/`](docs/) | Project scope, architecture, hardware, network, roadmap, and lessons learned. |
-| [`blue-team-tools/`](blue-team-tools/) | Tool selection and concise defensive evaluation pages. |
-| [`deploy/`](deploy/) | Testable Raspberry Pi Docker baseline and local-first setup guide. |
-| [`docker/`](docker/) | Service review guidance and a placeholder-only Compose example. |
-| [`security/`](security/) | Hardening, logging, backups, and incident response. |
-| [`bitcoin-security/`](bitcoin-security/) | Sanitized Bitcoin, Lightning, and OPSEC lessons. |
-| [`assets/diagrams/`](assets/diagrams/) | Future sanitized diagrams. |
-
-### Key Documents
+## Reference documents
 
 - [Architecture and trust boundaries](docs/architecture.md)
-- [Blue Team tool selection](blue-team-tools/tool-selection.md)
-- [Raspberry Pi Docker baseline](deploy/README.md)
-- [Hardening checklist](security/hardening-checklist.md)
-- [Logging and monitoring routine](security/logging-and-monitoring.md)
-- [Backup and restore strategy](security/backup-strategy.md)
-- [Incident response note template](security/incident-response-notes.md)
-- [Roadmap](docs/roadmap.md)
-- [Lessons learned](docs/lessons-learned.md)
+- [Deployment and safe profile activation](deploy/README.md)
+- [LITE vs FULL](docs/lite-vs-full.md) · [candidate image pins](docs/version-matrix.md)
+- [Roadmap](docs/roadmap.md) · [lessons learned](docs/lessons-learned.md)
+- [Hardening](security/hardening-checklist.md) · [logging](security/logging-and-monitoring.md) · [backups and restore](security/backup-strategy.md)
+- [Tool-selection rationale](blue-team-tools/tool-selection.md) · [Bitcoin / Lightning privacy lessons](bitcoin-security/opsec-notes.md)
+- [Evidence handling and sanitisation](exercises/SANITISATION.md) · [security policy](SECURITY.md)
 
-## Privacy and Sanitization
-
-This repository must not contain real public or private IP addresses, LAN details, hostnames, usernames, private domains, credentials, API keys, tokens, seed or recovery phrases, wallet data, VPN configuration, firewall rules, raw logs, or screenshots from the live environment.
-
-Documentation uses placeholders such as `<HOMELAB_HOST>`, `<LAN_SUBNET>`, `<ADMIN_WORKSTATION>`, `<SERVICE_PORT>`, `<LOCAL_ONLY>`, `<VPN_ONLY>`, `<BACKUP_TARGET>`, and `<REDACTED>`. Real configuration and operational evidence remain outside the repository.
+**Build less. Operate more. Evidence > architecture diagrams.**

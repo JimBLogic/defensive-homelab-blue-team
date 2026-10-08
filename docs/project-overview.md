@@ -1,5 +1,9 @@
 # Project Overview
 
+**Deployment-ready defensive baseline · operational validation in progress**
+
+This page documents preparation and design decisions. Live operation is not evidenced until an exercise is actually performed and reviewed.
+
 This repository documents a defensive homelab portfolio for practicing Linux administration, Docker operations, network monitoring, service health, log review, hardening, backups, and incident response thinking.
 
 The goal is to show how a small Raspberry Pi lab can be planned, observed, secured, reviewed, and improved with a realistic Blue Team mindset.
@@ -42,7 +46,7 @@ This project is intended to demonstrate:
 
 ## TODO
 
-- [ ] Complete the first sanitized Weekly Homelab Log Review.
+- [ ] Complete [Exercise 001](../exercises/001-baseline-health-review/README.md) before adding telemetry tools.
 - [ ] Validate one lightweight monitoring tool at a time.
 - [ ] Perform an isolated backup restore exercise.
 - [ ] Record findings and improvements in `docs/lessons-learned.md`.

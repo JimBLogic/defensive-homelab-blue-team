@@ -32,3 +32,7 @@ git checkout <previous_commit>
 ```
 
 Then render the previous Compose configuration before restarting. Do not use `docker compose down -v` casually; it deletes persistent named volumes and can turn a configuration rollback into data loss.
+
+## Optional-profile safety change
+
+FULL now requires explicit `containers` and `dns` profiles for cAdvisor and AdGuard Home; `detection` remains disabled. Older FULL deployments may retain running optional containers after a file update. Inspect locally, explicitly stop unneeded services, and remove the cAdvisor discovery file without deleting volumes. See [the exception record](../security/runtime-exceptions.md). This is a source change; live migration has not been performed here.

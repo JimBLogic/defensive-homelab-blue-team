@@ -1,8 +1,12 @@
 # Lessons Learned
 
+**Deployment-ready defensive baseline · operational validation in progress**
+
+This page documents preparation and design decisions. Live operation is not evidenced until an exercise is actually performed and reviewed.
+
 This page provides a consistent place to record practical learning as the homelab evolves. Entries should describe what was observed, why it matters defensively, and what will change next. Keep all examples sanitized.
 
-## Portfolio Progress Log â€” Defensive Homelab
+## Portfolio Progress Log — Defensive Homelab
 
 Completed PR #2: `Improve defensive homelab documentation depth`.
 
@@ -24,7 +28,7 @@ A first Docker-based Blue Team baseline has been prepared under `deploy/`.
 
 The default stack focuses on local-only availability monitoring, Linux host metrics, Prometheus metrics collection, and Grafana dashboard preparation. Optional profiles are documented separately for container metrics, DNS security, and detection experiments.
 
-No live operational evidence has been added yet. The next step is to deploy the default stack on the Raspberry Pi, validate access through SSH tunnels, and record the first sanitized operational exercise.
+No live operational evidence has been added yet. The next step is to run [Exercise 001](../exercises/001-baseline-health-review/README.md) on the authorized host and record reviewed findings. Preparation findings exist; live operation remains NOT VERIFIED.
 
 ## Entry Format
 

@@ -44,3 +44,7 @@ Metrics endpoint: not publicly exposed. Dashboard access: `<LOCAL_ONLY>` or just
 - [ ] Compare cAdvisor with a narrower exporter for privilege and data needs.
 - [ ] Document every required mount and capability before deployment.
 - [ ] Define restart and resource review criteria from a normal baseline.
+
+## Current exception decision
+
+cAdvisor is disabled behind `containers`, including in FULL. Its existing privileged setting and broad host mounts are unverified compatibility exceptions, not demonstrated minimum privileges. `/var/run:ro` may expose control sockets. Read [EX-002 and stop conditions](../security/runtime-exceptions.md) before any activation; use Docker native observations for Exercise 001.

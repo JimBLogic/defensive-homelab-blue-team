@@ -4,7 +4,7 @@ This document evaluates open-source defensive tools for a Raspberry Pi 4 with 8G
 
 The list is a decision record, not an installation plan. Each tool should be reviewed, deployed, and validated separately.
 
-A minimal first baseline is now prepared under [`deploy/`](../deploy/README.md). Only Uptime Kuma, Prometheus, Node Exporter, and Grafana start by default; cAdvisor and AdGuard Home require explicit profiles, and CrowdSec remains documentation-only.
+A minimal first baseline is now prepared under [`deploy/`](../deploy/README.md). Only Uptime Kuma, Prometheus, Node Exporter, and Grafana start by default; cAdvisor and AdGuard Home require explicit profiles, and CrowdSec remains disabled behind its `detection` profile with unvalidated log acquisition.
 
 ## Selection Principles
 
@@ -59,7 +59,7 @@ A minimal first baseline is now prepared under [`deploy/`](../deploy/README.md).
 - Security Onion on supported external x86 resources only.
 - Loki with Promtail or Alloy when basic review and retention processes are stable.
 
-See [Future Tools](future-tools.md) for the decision questions that must be answered before expanding the lab.
+The single initial SIEM route is [Windows / Sysmon → external Wazuh](../docs/siem-telemetry-roadmap.md); other candidates are deferred. See [Future Tools](future-tools.md) for the decision questions that must be answered before expanding the lab.
 
 ## TODO
 

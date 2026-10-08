@@ -1,58 +1,38 @@
 # Roadmap
 
-This roadmap tracks a realistic progression from safe documentation to small defensive exercises. Checked items exist as documentation; deployments and operational exercises remain unchecked until they are performed and recorded safely.
+**Deployment-ready defensive baseline · operational validation in progress**
 
-## Phase 1: Documentation and Privacy Baseline
+Checked items mean files or controls exist in the repository. No live deployment or investigation is marked completed without dated, sanitized operational evidence.
 
-- [x] Define repository sanitization and placeholder rules.
-- [x] Document architecture, trust boundaries, and exposure categories.
-- [x] Define the Blue Team scope and remove unrelated service directions.
-- [x] Document Raspberry Pi tool-selection criteria and staged priorities.
-- [ ] Re-run the privacy and link review before every public release.
+## Completed repository preparation
 
-## Phase 2: Lightweight Monitoring Baseline
+- [x] Document privacy boundaries, architecture, logging, backups and hardening.
+- [x] Provide the four-service LITE/FULL configuration and candidate image tags.
+- [x] Require explicit optional-service profiles and document privilege exceptions.
+- [x] Provide the consistent investigation template and Exercise 001 collection procedure.
+- [x] Define completion criteria for planned exercises 002–005.
+- [x] Choose one initial SIEM route: Windows / Sysmon → external Wazuh.
 
-- [x] Document Uptime Kuma service-check use cases.
-- [x] Document Prometheus metrics and retention planning.
-- [x] Document Node Exporter host-health planning.
-- [x] Document Grafana dashboard and sanitization planning.
-- [x] Prepare a local-only default Docker baseline under `deploy/`.
-- [ ] Deploy and validate Uptime Kuma as the first operational tool.
-- [ ] Complete Operational Exercise 001 and record sanitized results.
-- [ ] Define a small approved set of service checks and incident thresholds.
-- [ ] Add Prometheus, Node Exporter, and Grafana only after the first tool is stable.
+## Operate the current baseline first
 
-## Phase 3: Container and Host Visibility
+- [ ] Verify selected image availability / ARM64 compatibility on the actual host.
+- [ ] Run [001](../exercises/001-baseline-health-review/README.md): service health, telemetry, actual exposure, resource/restart comparison, disk, logs and security boundaries.
+- [ ] Publish reviewed live findings and lessons; then link the completed case in Operational evidence.
+- [ ] Repeat a bounded review and investigate a real health/restart finding if one occurs.
+- [ ] Perform an isolated backup restore; restore planning is not tested recovery.
+- [ ] Reduce effective capabilities/users only after compatibility tests and a reviewed exception decision.
 
-- [x] Document Docker monitoring risks and selection questions.
-- [x] Add container restart and host resource checks to the review routine.
-- [x] Maintain a privacy-aware log review checklist.
-- [ ] Select a least-privilege container metrics approach.
-- [ ] Record a sanitized host resource baseline.
-- [ ] Investigate one container restart or health-check event.
+## First SOC investigations
 
-## Phase 4: DNS and Network Defense
+Follow the [telemetry roadmap](siem-telemetry-roadmap.md), with resource/isolation gates before deployment.
 
-- [x] Select AdGuard Home as the documented DNS security candidate.
-- [x] Document local-only administration and privacy requirements.
-- [ ] Define a blocked-domain review workflow using sanitized summaries.
-- [ ] Record false-positive handling without publishing browsing history.
-- [ ] Complete a network exposure review for dashboards and metrics endpoints.
+- [ ] [002 — Authentication triage](../exercises/002-authentication-triage/README.md).
+- [ ] [003 — Process / PowerShell investigation](../exercises/003-process-or-powershell-investigation/README.md).
+- [ ] [004 — Network / DNS investigation](../exercises/004-network-dns-investigation/README.md).
+- [ ] [005 — Detection-rule tuning](../exercises/005-detection-rule-tuning/README.md).
+- [ ] Learn basic KQL on an explicitly synthetic dataset after one real Wazuh query/investigation; no second SIEM is required.
+- [ ] Practice EDR concepts and a simulated L2 handoff; do not claim professional incident ownership.
 
-## Phase 5: Detection and Response
+## Deferred; no installation queue
 
-- [x] Document CrowdSec as a staged log-based detection candidate.
-- [x] Maintain a reusable incident response note template.
-- [x] Define the Weekly Homelab Log Review exercise.
-- [ ] Complete and record the first weekly review.
-- [ ] Open a sanitized incident note if an abnormal event is identified.
-- [ ] Evaluate alert thresholds and false-positive handling after a normal baseline exists.
-
-## Phase 6: Future Advanced Lab
-
-- [x] Document why advanced tools require separate evaluation.
-- [ ] Evaluate Loki with Promtail or Alloy after basic log review is established.
-- [ ] Evaluate Suricata only with suitable network visibility and performance capacity.
-- [ ] Test Zeek in an external lab better suited to packet analysis.
-- [ ] Explore Wazuh through an external x86 deployment or limited agent-only path.
-- [ ] Keep Security Onion in an external x86 lab, not on the Raspberry Pi.
+cAdvisor, AdGuard Home, CrowdSec, log aggregation and IDS tools require a specific unanswered learning question, privacy review, resource headroom and rollback. cAdvisor stays disabled for 001. Alternative SIEMs, Security Onion and packet-analysis stacks are deferred; do not deploy them simultaneously or add tools to make the portfolio look larger.
