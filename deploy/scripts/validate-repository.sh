@@ -30,6 +30,16 @@ required_files=(
   docs/reproducibility-audit.md
   docs/version-matrix.md
   docs/migration-plan.md
+  security/runtime-exceptions.md
+  docs/siem-telemetry-roadmap.md
+  exercises/_investigation-template.md
+  exercises/SANITISATION.md
+  exercises/001-baseline-health-review/README.md
+  exercises/001-baseline-health-review/evidence-summary.md
+  exercises/001-baseline-health-review/queries-or-commands.md
+  exercises/001-baseline-health-review/lessons-learned.md
+  deploy/scripts/baseline-health-review.py
+  deploy/scripts/static-guardrails.py
   .gitignore
 )
 for file in "${required_files[@]}"; do
@@ -39,32 +49,32 @@ done
 if ! command -v rg >/dev/null 2>&1; then
   fail 'ripgrep (rg) is required for repository validation'
 else
-  if rg -n ':(latest|main|master)(["[:space:]]|$)' "$repo_root/deploy"; then
+  if rg -q ':(latest|main|master)(["[:space:]]|$)' "$repo_root/deploy"; then
     fail 'forbidden broad image tag found'
   else
     pass 'no latest/main/master image tags in deploy'
   fi
 
-  if rg -n ':(.*(alpha|beta|rc|edge|dev|snapshot))' "$repo_root/deploy/.env.example" -i; then
+  if rg -q ':(.*(alpha|beta|rc|edge|dev|snapshot))' "$repo_root/deploy/.env.example" -i; then
     fail 'pre-release image tag found'
   else
     pass 'no alpha/beta/rc/edge/dev image tags in image variables'
   fi
 
-  if rg -n --pcre2 '\b(jellyfin|jellyseerr|radarr|sonarr|plex|torrent|qbittorrent|transmission)\b' \
+  if rg -q --pcre2 '\b(jellyfin|jellyseerr|radarr|sonarr|plex|torrent|qbittorrent|transmission)\b' \
     "$repo_root" -i -g '!deploy/scripts/validate-repository.sh'; then
     fail 'forbidden media-stack reference found'
   else
     pass 'no media-stack references found'
   fi
 
-  if rg -n '^\s*(wazuh-manager|wazuh-indexer|wazuh-dashboard):' "$repo_root/deploy"; then
+  if rg -q '^\s*(wazuh-manager|wazuh-indexer|wazuh-dashboard):' "$repo_root/deploy"; then
     fail 'forbidden Wazuh central service found'
   else
     pass 'no Wazuh central Docker services found'
   fi
 
-  if rg -n '0\.0\.0\.0:|\[::\]:' \
+  if rg -q '0\.0\.0\.0:|\[::\]:' \
     "$repo_root/deploy/compose.yaml" \
     "$repo_root/deploy/compose.lite.yaml" \
     "$repo_root/deploy/compose.full.yaml"; then
@@ -73,7 +83,7 @@ else
     pass 'no all-interface Compose bindings found'
   fi
 
-  if rg -n --pcre2 '^\s*ports:\s*\[\s*"(?!127\.0\.0\.1:)' \
+  if rg -q --pcre2 '^\s*ports:\s*\[\s*"(?!127\.0\.0\.1:)' \
     "$repo_root/deploy/compose.yaml" \
     "$repo_root/deploy/compose.lite.yaml" \
     "$repo_root/deploy/compose.full.yaml"; then
@@ -82,7 +92,7 @@ else
     pass 'inline Compose port bindings are loopback-only'
   fi
 
-  if rg -n --pcre2 '^\s*-\s*"(?!127\.0\.0\.1:)[^"/]*:[0-9]+(?:/(?:tcp|udp))?"\s*$' \
+  if rg -q --pcre2 '^\s*-\s*"(?!127\.0\.0\.1:)[^"/]*:[0-9]+(?:/(?:tcp|udp))?"\s*$' \
     "$repo_root/deploy/compose.yaml" \
     "$repo_root/deploy/compose.lite.yaml" \
     "$repo_root/deploy/compose.full.yaml"; then
@@ -91,7 +101,7 @@ else
     pass 'multiline Compose port bindings are loopback-only'
   fi
 
-  if rg -n --pcre2 -g '!deploy/scripts/validate-repository.sh' -- \
+  if rg -q --pcre2 -g '!deploy/scripts/validate-repository.sh' -- \
     '-----BEGIN (RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|tailscale.*(tskey|authkey)|password\s*=\s*[^<\s][^\s]+' \
     "$repo_root"; then
     fail 'possible committed secret found'
@@ -203,19 +213,43 @@ else
   skip 'YAML parser unavailable'
 fi
 
-if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-  if (cd "$deploy_dir" && docker compose --env-file .env.example -f compose.yaml -f compose.lite.yaml config >/dev/null); then
-    pass 'Compose renders for LITE'
+if command -v python3 >/dev/null 2>&1; then
+  if python3 "$deploy_dir/scripts/static-guardrails.py"; then
+    pass 'semantic source guardrails and local Markdown links'
   else
-    fail 'Compose LITE render failed'
-  fi
-  if (cd "$deploy_dir" && docker compose --env-file .env.example -f compose.yaml -f compose.full.yaml config >/dev/null); then
-    pass 'Compose renders for FULL'
-  else
-    fail 'Compose FULL render failed'
+    fail 'semantic source guardrails or local Markdown links failed'
   fi
 else
-  skip 'Docker Compose unavailable; LITE/FULL render not executed'
+  fail 'Python 3 is required for semantic source guardrails'
+fi
+
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+  for mode in lite full; do
+    if (cd "$deploy_dir" && docker compose --env-file .env.example -f compose.yaml -f "compose.$mode.yaml" config --quiet >/dev/null 2>&1); then
+      pass "Compose renders for $mode"
+    else
+      fail "Compose render failed for $mode; inspect configuration privately"
+    fi
+    if services="$(cd "$deploy_dir" && docker compose --env-file .env.example -f compose.yaml -f "compose.$mode.yaml" config --services 2>/dev/null)"; then
+      actual="$(sort <<<"$services")"
+      expected="$(printf '%s\n' uptime-kuma prometheus node-exporter grafana | sort)"
+      if [[ "$actual" == "$expected" ]]; then pass "only core services active without profiles: $mode"
+      else fail "unexpected default services for $mode"; fi
+    else
+      fail "default service set unavailable for $mode"
+    fi
+  done
+  if (cd "$deploy_dir" && docker compose --env-file .env.example -f compose.yaml -f compose.full.yaml --profile containers --profile dns --profile detection config --quiet >/dev/null 2>&1); then
+    pass 'Compose renders for all explicit optional profiles'
+  else
+    fail 'Compose optional-profile render failed; inspect privately'
+  fi
+else
+  if [[ "${REQUIRE_COMPOSE:-0}" == "1" ]]; then
+    fail 'Docker Compose required but unavailable'
+  else
+    skip 'Docker Compose unavailable; actual LITE/FULL/profile rendering not executed'
+  fi
 fi
 
 if (( failures > 0 )); then

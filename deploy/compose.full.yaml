@@ -25,9 +25,12 @@ services:
     pids_limit: 384
   cadvisor:
     image: ${CADVISOR_IMAGE}
+    profiles: [containers]
     restart: unless-stopped
     read_only: true
-    privileged: true # cAdvisor needs host cgroup/container visibility; no Docker socket is mounted
+    # High-risk exception EX-002; review security/runtime-exceptions.md first.
+    # /var/run can include the Docker socket; :ro does not restrict its API.
+    privileged: true
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -41,6 +44,7 @@ services:
     <<: *default-security
   adguard-home:
     image: ${ADGUARD_HOME_IMAGE}
+    profiles: [dns]
     restart: unless-stopped
     ports:
       - "127.0.0.1:${ADGUARD_ADMIN_PORT:-3002}:3000"

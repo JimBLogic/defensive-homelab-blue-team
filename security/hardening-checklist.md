@@ -89,6 +89,10 @@ This checklist supports repeatable reviews of the host and its services. For Blu
 - [ ] Keep recovery media and sanitized recovery notes available.
 - [ ] Store any offline backup separately from the primary host.
 
+## Explicit runtime exceptions
+
+Review [Node Exporter host visibility and the disabled cAdvisor privilege/socket exception](runtime-exceptions.md). Check actual deployed users/capabilities and mounts; a source checklist is not proof of runtime least privilege. Optional profiles must remain off unless reviewed.
+
 ## Review Notes
 
 Record the review date as `<REVIEW_DATE>`, the reviewer as `<REDACTED>`, exceptions as `<DOCUMENTED_EXCEPTION>`, and follow-up work in the [roadmap](../docs/roadmap.md). Revisit this checklist after major deployments, incidents, and architecture changes.

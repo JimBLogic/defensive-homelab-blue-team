@@ -28,7 +28,7 @@ Actual log locations and scrape targets remain private. Public examples must use
 
 ## First Operational Exercise Candidate
 
-The [deployment baseline](../deploy/README.md) defines Operational Exercise 001 â€” Baseline Service Health Review. It validates the four default containers, SSH-tunnel access, Prometheus scraping, Grafana connectivity, restart counts, and disk usage before more complex monitoring is added.
+The [Baseline Service Health Review](../exercises/001-baseline-health-review/README.md) is IN PROGRESS / NOT VERIFIED. Its procedure covers the four core containers, application health, actual bindings, targets/datasource, Kuma history, resources, restart comparison, storage, logs and current security boundaries. No live result has been published.
 
 ### Weekly Homelab Log Review
 

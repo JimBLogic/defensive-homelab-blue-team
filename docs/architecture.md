@@ -1,5 +1,9 @@
 # Architecture
 
+**Deployment-ready defensive baseline · operational validation in progress**
+
+This page documents preparation and design decisions. Live operation is not evidenced until an exercise is actually performed and reviewed.
+
 This document describes the Defensive Homelab Blue Team Lab without revealing the real home network. Names, addresses, routes, ports, and configuration values are represented by placeholders.
 
 ## Sanitized Architecture Diagram

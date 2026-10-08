@@ -1,10 +1,14 @@
 # Reproducible Compose File Set
 
+**Deployment-ready defensive baseline · operational validation in progress**
+
+This guide describes configured behavior. No live deployment has been verified in the published exercises.
+
 This deployment now uses the Compose v2 file set below instead of the previous single `docker-compose.yml` entry point:
 
 - `compose.yaml` for shared services, networks, volumes, private bindings, logging, healthchecks, and optional profiles.
 - `compose.lite.yaml` for conservative LITE resource settings.
-- `compose.full.yaml` for FULL resource settings and enabling cAdvisor plus AdGuard Home test mode.
+- `compose.full.yaml` for FULL resource settings; optional services still require explicit profiles.
 
 Existing named volumes are preserved: `uptime_kuma_data`, `prometheus_data`, `grafana_data`, `adguard_work`, `adguard_conf`, `crowdsec_data`, and `crowdsec_config`.
 
@@ -15,7 +19,7 @@ cd deploy
 cp .env.example .env
 $EDITOR .env
 ./scripts/validate-repository.sh
-docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config --quiet
 docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
 ```
 
@@ -25,9 +29,8 @@ docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
 cd deploy
 cp .env.example .env
 $EDITOR .env
-cp prometheus/cadvisor-target.example.yml prometheus/targets/cadvisor.yml
 ./scripts/validate-repository.sh
-docker compose --env-file .env -f compose.yaml -f compose.full.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.full.yaml config --quiet
 docker compose --env-file .env -f compose.yaml -f compose.full.yaml up -d
 ```
 
@@ -46,7 +49,7 @@ This directory provides the first testable Docker baseline for the Defensive Hom
 - Node Exporter for Linux host metrics.
 - Grafana OSS for dashboards.
 
-cAdvisor and AdGuard Home are optional profiles. CrowdSec remains documentation-only until log acquisition, privacy, and false-positive handling are reviewed. This baseline is a learning environment, not an enterprise SOC or production promise.
+cAdvisor and AdGuard Home require explicit `containers` and `dns` profiles. CrowdSec is defined only in FULL behind the disabled `detection` profile; acquisition and alert handling remain unvalidated. No optional service is needed for Exercise 001.
 
 ## 2. Hardware Assumptions
 
@@ -64,7 +67,7 @@ The deployment does not assume a particular SSD device name, filesystem, or moun
 - Node Exporter and cAdvisor have no published host ports; Prometheus reaches them through the internal `metrics` network.
 - cAdvisor is disabled by default because it requires sensitive read-only host mounts and privileged access.
 - AdGuard Home is disabled by default and binds its test DNS and administration ports to localhost.
-- CrowdSec has no active Compose service or remediation bouncer in this baseline.
+- CrowdSec remains disabled behind the `detection` profile, with no remediation bouncer or validated log acquisition.
 - Real credentials, addresses, hostnames, logs, and environment values remain outside Git.
 
 ## 4. Prerequisites
@@ -115,7 +118,7 @@ git clone https://github.com/JimBLogic/defensive-homelab-blue-team.git
 cd defensive-homelab-blue-team/deploy
 ```
 
-The repository is public, but the live homelab is not. Do not place tokens, credentials, private remote URLs, real hostnames, LAN details or operational evidence in commits, shell history, issues or documentation.
+The repository is public, but the live homelab is not. Do not place tokens, credentials, private remote URLs, real hostnames, LAN details or raw/identifying operational evidence in commits, shell history, issues or documentation.
 
 Before publishing a branch, run:
 
@@ -133,12 +136,12 @@ If `.env` does not already exist, create it from the safe example:
 cp .env.example .env
 ```
 
-Edit `.env` locally and replace every `<CHANGE_ME>` value. The real `.env` is ignored by Git and must never be committed. Restrict its permissions according to the host security policy.
+Edit `.env` locally and replace every angle-bracket placeholder, including `<CHANGE_ME_LONG_RANDOM_PASSWORD>`. The real `.env` is ignored by Git and must never be committed. Restrict its permissions according to the host security policy.
 
 Review the rendered configuration before starting containers:
 
 ```bash
-docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config --quiet
 ```
 
 The example uses explicit candidate image pins from `.env.example`. Verify ARM64 manifests on the Raspberry Pi before claiming runtime compatibility.
@@ -213,34 +216,32 @@ cAdvisor should not appear until its reviewed target file is enabled with the `c
 
 ## 15. Optional Profiles
 
-Optional profiles require a separate review before use.
+FULL alone keeps all optional profiles disabled. Review [runtime exceptions](../security/runtime-exceptions.md) before any activation. Existing containers from an older FULL revision may remain running; inspect them privately and explicitly stop unwanted services without deleting volumes.
 
-### Container metrics: `containers`
+### Container metrics: `containers` — high-risk exception
 
-cAdvisor requires privileged access and sensitive read-only mounts for the host root, runtime state, system data, and Docker data. Review [Docker Container Monitoring](../blue-team-tools/docker-container-monitoring.md) before enabling it.
-
-Activate its Prometheus target and start the profile:
+Not needed for Exercise 001. cAdvisor retains privileged mode and broad host mounts. `/var/run:ro` may expose the Docker socket; read-only does not limit socket API permissions. Necessity of privileged mode on this host is unverified. Only after a separate privilege/resource/privacy review:
 
 ```bash
 cp prometheus/cadvisor-target.example.yml prometheus/targets/cadvisor.yml
-docker compose --env-file .env -f compose.yaml -f compose.full.yaml up -d
+docker compose --env-file .env -f compose.yaml -f compose.full.yaml --profile containers up -d
 ```
 
-The generated target file is ignored by Git. cAdvisor has no published port and is reachable only through the internal `metrics` network.
+The target file is ignored by Git. cAdvisor publishes no host port. Stop and remove its discovery file as described in EX-002 when no longer needed; do not claim an internal network eliminates the privilege risk.
 
 ### DNS security: `dns`
 
-AdGuard Home is a local test service only. It binds the administration interface and test DNS listener to localhost by default:
+AdGuard Home is for localhost test DNS and administration, not the LAN resolver. Only after a separate privacy/capacity review:
 
 ```bash
-docker compose --env-file .env -f compose.yaml -f compose.full.yaml up -d
+docker compose --env-file .env -f compose.yaml -f compose.full.yaml --profile dns up -d
 ```
 
-DNS normally uses port 53, but this baseline uses configurable localhost test ports to reduce conflict and exposure. Do not make it the network resolver or point clients at it until availability, privacy, rollback, and LAN design have been reviewed.
+Do not point home clients at it, collect browsing histories, or replace DNS settings for this exercise.
 
-### Detection: documentation-only
+### Detection: `detection` — planned, disabled
 
-CrowdSec is intentionally not present as a Compose service. Review `crowdsec/README.md` and `acquis.example.yaml` first. A later change may introduce a `detection` profile only after approved log sources and detection-before-blocking procedures are documented.
+A disabled CrowdSec definition exists in FULL. Review `crowdsec/README.md` and `acquis.example.yaml` before even a test deployment. No approved acquisition source or detection/remediation result exists. There is no bouncer; use the single Windows/Sysmon → external Wazuh path for the first SOC investigations.
 
 ## 16. Stop the Stack
 
@@ -262,7 +263,7 @@ Use the FULL file set instead when that mode is running. Do not append `-v` unle
 6. Record the validated versions and rollback decision.
 
 ```bash
-docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config --quiet
 docker compose --env-file .env -f compose.yaml -f compose.lite.yaml pull
 docker compose --env-file .env -f compose.yaml -f compose.lite.yaml up -d
 docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps
@@ -286,7 +287,7 @@ Do not commit volume data, database contents, archives, `.env`, dashboard creden
 Start with read-only status and configuration checks:
 
 ```bash
-docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config
+docker compose --env-file .env -f compose.yaml -f compose.lite.yaml config --quiet
 docker compose --env-file .env -f compose.yaml -f compose.lite.yaml ps
 docker compose --env-file .env -f compose.yaml -f compose.lite.yaml logs --tail=50 <SERVICE_NAME>
 ss -lnt
@@ -307,27 +308,11 @@ Keep troubleshooting notes sanitized and avoid pasting raw logs into Git.
 
 ## 20. Operational Exercise 001 — Baseline Service Health Review
 
-- [ ] Confirm the four default containers are running.
-- [ ] Confirm Uptime Kuma is reachable through an SSH tunnel.
-- [ ] Confirm Prometheus can scrape Node Exporter.
-- [ ] Confirm Grafana can connect to Prometheus.
-- [ ] Review Docker restart counts.
-- [ ] Review disk usage and metrics-retention capacity.
-- [ ] Record sanitized results in `docs/lessons-learned.md`.
-- [ ] Open an incident note only if something abnormal is found.
+**IN PROGRESS / NOT VERIFIED.** The authoritative procedure, completion criteria, evidence register and lessons are in [Exercise 001](../exercises/001-baseline-health-review/README.md).
 
-This exercise validates the baseline; it does not prove production readiness.
+```bash
+./scripts/verify-stack.sh lite
+python3 scripts/baseline-health-review.py --mode lite --output /tmp/baseline-health-review.json
+```
 
-## 21. What to Record in `docs/lessons-learned.md`
-
-Record:
-
-- The sanitized exercise date and scope.
-- Which default services started successfully.
-- Whether loopback bindings and SSH tunnels worked as intended.
-- Prometheus target status and Grafana datasource status.
-- Any restart, disk, memory, temperature, or log findings.
-- What was expected, what differed, and the next improvement.
-- Whether an incident note was required.
-
-Do not record real addresses, hostnames, usernames, credentials, DNS history, raw logs, or screenshots.
+Use `full` for the actually deployed FULL mode. The collector is read-only and keeps manual checks pending. Run a second observation after at least five minutes, review private logs/Kuma/SSH/firewall/storage/effective privileges, then write a human-reviewed sanitized result. An unavailable check is not a pass. No live operational exercise has been completed in this repository yet.

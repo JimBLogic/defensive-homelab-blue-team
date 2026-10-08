@@ -25,16 +25,20 @@ jobs:
           persist-credentials: false
           show-progress: false
 
-      - name: Install validation dependency
+      - name: Install validation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends ripgrep
+          sudo apt-get install --yes --no-install-recommends ripgrep python3-yaml
+
+      - name: Test privacy and guardrail regressions (synthetic fixtures only)
+        run: python3 -m unittest discover -s tests -v
 
       - name: Validate public repository boundary
         id: validation
         continue-on-error: true
         env:
           VALIDATION_QUIET: "1"
+          REQUIRE_COMPOSE: "1"
         run: |
           set -o pipefail
           ./deploy/scripts/validate-repository.sh 2>&1 | tee validation-report.txt

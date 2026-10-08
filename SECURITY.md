@@ -2,7 +2,7 @@
 
 ## Public repository boundary
 
-This repository contains sanitized documentation and reproducible examples. It must not contain live infrastructure evidence or access material, including:
+This repository contains sanitized documentation and reproducible examples. It must not contain raw or identifying live infrastructure evidence or access material, including:
 
 - public or private IP addresses tied to the homelab;
 - real hostnames, usernames, domains, LAN topology or firewall rules;
@@ -10,6 +10,8 @@ This repository contains sanitized documentation and reproducible examples. It m
 - packet captures, raw logs, local databases, backups or screenshots;
 - Bitcoin wallet data, descriptors, seed or recovery phrases;
 - notification endpoints, webhook URLs or service session data.
+
+Reviewed operational summaries may contain dated findings, service roles, status, queries and minimized numeric aggregates. Private originals remain outside the checkout. Apply [the evidence checklist](exercises/SANITISATION.md) before publication; never publish collector output automatically.
 
 The automated validator catches common patterns and risky tracked filenames, but it cannot prove that a commit is sanitized. Review every diff manually before publication.
 
