@@ -31,7 +31,7 @@ class SecurityPatchTests(unittest.TestCase):
             "GRAFANA_IMAGE": "grafana/grafana:13.1.8",
             "CADVISOR_IMAGE": "ghcr.io/google/cadvisor:0.60.6",
             "ADGUARD_HOME_IMAGE": "adguard/adguardhome:v0.107.79",
-            "CROWDSEC_IMAGE": "crowdsecurity/crowdsec:1.7.8-debian",
+            "CROWDSEC_IMAGE": "crowdsecurity/crowdsec:v1.7.8-debian",
         }
         for name, image in expected.items():
             self.assertEqual(self.env[name], image)
