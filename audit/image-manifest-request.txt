@@ -1,0 +1,1 @@
+One-shot GitHub-only manifest HEAD metadata test for Raspberry Pi ARM64 image candidates; no image pull, workload deploy, secrets, NAS/host calls or cloud spend. 2026-10-15.
