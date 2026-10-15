@@ -36,3 +36,14 @@
 Privately export consistent snapshots of `uptime_kuma_data`, `prometheus_data`, `grafana_data` (and optional data volumes if those services were already running), test restores to an *isolated* machine, verify new ARM64 image digests and upstream migration notes, and perform staged updates with rollback plan. Never run `docker compose down -v` as part of rollback.
 
 **Status:** security improvements prepared in GitHub, source-level QA to be recorded below; **operational validation still in progress**, Exercise 001 remains IN PROGRESS / NOT VERIFIED. The public resume is not evidence that personal services are deployed.
+
+
+## Actual GitHub validation completed
+
+- **[Public-repository PR checks #38737067270](https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38737067270): PASS** — 36 synthetic Python security/privacy tests (29 original + 7 patch-specific), semantic source guardrails and actual Docker Compose LITE/FULL/optional-profile rendering on an Ubuntu 24.04 GitHub runner.
+- **[Registry metadata #38737509264](https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38737509264): PASS** at commit `4ef04391c7216cafa22eaa3a3113be523c683a7e`. All **seven** declared image tags exposed a `linux/arm64` platform in their registry manifests: Uptime Kuma, Prometheus, Node Exporter, Grafana, cAdvisor, AdGuard Home and CrowdSec. Checks used `docker buildx imagetools inspect --raw`; **no image was pulled or run**.
+- **Initial checks correctly FAILED** on `google/cadvisor:v0.60.6` from obsolete Docker Hub `google/cadvisor` ([#38736569471](https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38736569471)) and on CrowdSec's original missing `v` tag ([#38737302838](https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38737302838)). These were **real missing image tags**, not merely a linter complaint; fixed by switching to vendor GHCR and `v1.7.8-debian`, respectively.
+- The source-level tests **do not attest** running containers or an ARM64-only rootfs runtime; registry manifests are declarative metadata and cannot prove the image's functional compatibility, absence of CVEs or actual SSD/volume migrations.
+- The branch-only one-shot manifest Action was for the audit and is **removed from the final proposed change** after saving evidence. It never requested `contents:write` and has no schedule.
+
+**Disposition:** prepared for review as GitHub **DRAFT PR #12**, NOT for automatic merge or deployment. Preserve all running host services, local `.env`, secrets and volumes.
