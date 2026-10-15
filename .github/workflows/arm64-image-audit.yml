@@ -24,7 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           docker buildx version
-          for variable in UPTIME_KUMA_IMAGE PROMETHEUS_IMAGE GRAFANA_IMAGE CADVISOR_IMAGE ADGUARD_HOME_IMAGE; do
+          for variable in UPTIME_KUMA_IMAGE PROMETHEUS_IMAGE NODE_EXPORTER_IMAGE GRAFANA_IMAGE CADVISOR_IMAGE ADGUARD_HOME_IMAGE CROWDSEC_IMAGE; do
             image="$(sed -n "s/^${variable}=//p" deploy/.env.example)"
             [[ -n "$image" && "$image" != *[[:space:]]* ]] || { echo "::error::Missing or invalid pinned image: $variable"; exit 1; }
             echo "CHECK: $variable $image"
