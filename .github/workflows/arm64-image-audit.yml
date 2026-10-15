@@ -1,0 +1,42 @@
+name: Isolated Raspberry Pi ARM64 image metadata audit
+
+"on":
+  push:
+    branches:
+      - audit/container-security-20261015
+    paths:
+      - audit/image-manifest-request.txt
+
+permissions:
+  contents: read
+
+jobs:
+  image-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout audit branch without persistent Git credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify candidate registry manifests without pulling or running any image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx version
+          for variable in UPTIME_KUMA_IMAGE PROMETHEUS_IMAGE GRAFANA_IMAGE CADVISOR_IMAGE ADGUARD_HOME_IMAGE; do
+            image="$(sed -n "s/^${variable}=//p" deploy/.env.example)"
+            [[ -n "$image" && "$image" != *[[:space:]]* ]] || { echo "::error::Missing or invalid pinned image: $variable"; exit 1; }
+            echo "CHECK: $variable $image"
+            if ! timeout 75 docker buildx imagetools inspect --raw "$image" > /tmp/candidate-image-manifest.json; then
+              echo "::error::Image registry lookup failed: $variable (do not deploy without inspection)"
+              exit 1
+            fi
+            if jq -e '[.manifests[]? | select(.platform.os == "linux" and .platform.architecture == "arm64")] | length > 0' /tmp/candidate-image-manifest.json >/dev/null; then
+              echo "PASS: $variable advertises linux/arm64"
+            else
+              echo "::error::Cannot verify an ARM64 manifest in $variable (no fallback to amd64)"
+              exit 1
+            fi
+          done
+          echo "Registry manifest metadata check succeeded; no image was downloaded, started, scanned for CVEs or deployed."
