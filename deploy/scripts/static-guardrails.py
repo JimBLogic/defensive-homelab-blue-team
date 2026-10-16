@@ -90,6 +90,19 @@ def compose_issues(base, full, lite, env):
                 issues.append("resource limit guard: " + mode + "/" + role)
     if not base.get("networks", {}).get("metrics", {}).get("internal"):
         issues.append("internal metrics network guard")
+
+    # Prometheus lifecycle APIs include unauthenticated HTTP reload AND quit.
+    # No current lab script requires these; a localhost host binding does not
+    # protect the HTTP API from other containers on the monitoring network.
+    # Keep this narrow explicit command allowlist until a new use is reviewed.
+    expected_prometheus_args = {
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus",
+        "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-7d}",
+    }
+    arguments = base.get("services", {}).get("prometheus", {}).get("command")
+    if not isinstance(arguments, list) or len(arguments) != len(expected_prometheus_args) or set(arguments) != expected_prometheus_args:
+        issues.append("prometheus HTTP lifecycle/admin and command guard")
     return issues
 
 

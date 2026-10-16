@@ -1,0 +1,83 @@
+{
+  "audit_date": "2026-10-15",
+  "project": "JimBLogic/defensive-homelab-blue-team",
+  "source_main_before_review": "b3658b8bf60ef62f6d2a782b79501d824bb8390e",
+  "scope": "GITHUB_SOURCE_ONLY; public repo; Raspberry Pi, .env, local volumes, devices and production untouched",
+  "checks": [
+    {
+      "name": "PR semantic, Python security/privacy and Docker Compose render",
+      "run": 38737067270,
+      "url": "https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38737067270",
+      "result": "PASS",
+      "tests": {
+        "passed": 36,
+        "failed": 0
+      },
+      "scope": "synthetic tests + LITE/FULL/profile config, not daemon execution"
+    },
+    {
+      "name": "ARM64 image metadata five updated tags",
+      "run": 38736942009,
+      "result": "PASS",
+      "images": 5,
+      "url": "https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38736942009"
+    },
+    {
+      "name": "ARM64 image metadata all seven configured tags",
+      "run": 38737509264,
+      "result": "PASS",
+      "tested_commit": "4ef04391c7216cafa22eaa3a3113be523c683a7e",
+      "images": 7,
+      "url": "https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38737509264",
+      "downloaded_images": false,
+      "launched_images": false
+    },
+    {
+      "name": "Obsolete Google Docker Hub tag discovery",
+      "run": 38736569471,
+      "result": "FAIL_AS_EXPECTED",
+      "issue": "google/cadvisor:v0.60.6 NOT FOUND",
+      "resolution": "ghcr.io/google/cadvisor:0.60.6"
+    },
+    {
+      "name": "CrowdSec missing v-prefixed tag discovery",
+      "run": 38737302838,
+      "result": "FAIL_AS_EXPECTED",
+      "issue": "crowdsecurity/crowdsec:1.7.8-debian NOT FOUND",
+      "resolution": "crowdsecurity/crowdsec:v1.7.8-debian"
+    }
+  ],
+  "images": {
+    "uptime_kuma": "louislam/uptime-kuma:2.5.6-slim",
+    "prometheus": "prom/prometheus:v3.13.4",
+    "node_exporter": "prom/node-exporter:v1.12.1",
+    "grafana": "grafana/grafana:13.1.8",
+    "cadvisor": "ghcr.io/google/cadvisor:0.60.6",
+    "adguard_home": "adguard/adguardhome:v0.107.79",
+    "crowdsec": "crowdsecurity/crowdsec:v1.7.8-debian"
+  },
+  "security_corrections": [
+    "remove Prometheus --web.enable-lifecycle",
+    "guard exact Prometheus args in CI",
+    "update security-fixed stable image candidates and fix 2 invalid optional image refs",
+    "modernize immutable SHA-pinned GitHub actions",
+    "verify arm64 index manifests for all seven"
+  ],
+  "open_conditions": [
+    "privileged cAdvisor intentionally opt-in: high-risk mounts and socket exposure",
+    "node_exporter host pid visibility",
+    "Grafana admin environment secret visible to Docker privileged users",
+    "live arm64 runtime / version migrations untested",
+    "backup/restore of Uptime Kuma database, Prometheus TSDB and Grafana not performed",
+    "no full image CVE scanning or digest pinning yet",
+    "prometheus lifecycle removal behavior not exercised on a running Pi"
+  ],
+  "owner_safe_status": {
+    "github_draft_review": "GO",
+    "real_homelab_deploy": "NO_GO",
+    "main_merge": "NOT_AUTHORIZED",
+    "real_device_modified": false,
+    "backups_modified": false,
+    "scheduled_automation_added": false
+  }
+}

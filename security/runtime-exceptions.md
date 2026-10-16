@@ -48,7 +48,7 @@ After the next target-discovery interval, verify the cAdvisor target is absent. 
 
 Loopback published ports limit network exposure but remain accessible to local users/processes. Container-network peers can also reach service listeners. The internal metrics network is not an authentication boundary. Node Exporter has host visibility; Prometheus/Grafana also join the monitoring network. Confirm actual bindings, unrelated host listeners, Docker API exposure, SSH access, routing/firewall intent, secrets permissions and pending hardening items privately. A Compose check cannot prove the whole host is isolated.
 
-Prometheus retains its existing lifecycle endpoint, reachable within its networks/loopback binding. Treat reload access as administrative access; never expose it broadly. Grafana credentials remain in local runtime configuration, and Docker administrators can inspect container environment values. Keep `.env` access restricted; do not paste rendered Compose or inspection output into public artifacts.
+Prometheus's HTTP `/-/reload` and `/-/quit` lifecycle endpoints are deliberately **disabled** in the patched Compose baseline. Use a reviewed process signal or a controlled service restart to reload configuration instead. Never add `--web.enable-lifecycle` or `--web.enable-admin-api` merely to simplify monitoring. Local processes and other containers on the monitoring network can access Prometheus; loopback publishing is not authentication. Grafana credentials remain in local runtime configuration, and Docker administrators can inspect container environment values. Keep `.env` access restricted; do not paste rendered Compose or inspection output into public artifacts.
 
 ## Primary references
 

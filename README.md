@@ -62,6 +62,7 @@ Compose rendering requires Docker Compose; use `REQUIRE_COMPOSE=1` to fail if it
 
 ## Reference documents
 
+- [15 October 2026 security-patch review (draft only, no Pi changes)](docs/security-audit-2026-10-15.md) · [auditable CI evidence](docs/security-evidence-2026-10-15.json)
 - [Architecture and trust boundaries](docs/architecture.md)
 - [Deployment and safe profile activation](deploy/README.md)
 - [LITE vs FULL](docs/lite-vs-full.md) · [candidate image pins](docs/version-matrix.md)
