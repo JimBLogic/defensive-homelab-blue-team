@@ -1,6 +1,6 @@
 # Version Matrix — security patch candidates
 
-**Reviewed 2026-10-15.** Exact *version tags*, **not immutable content digests**, are declared in `deploy/.env.example`. These are **candidates only** and have **not** been deployed to or health-checked on the Raspberry Pi 4. Real `deploy/.env` and named-volume content are outside this public repository.
+**Reviewed 2026-10-15; CrowdSec baseline/candidate correction verified 2026-10-16.** Exact *version tags*, **not immutable content digests**, are declared in `deploy/.env.example`. These are **candidates only** and have **not** been deployed to or health-checked on the Raspberry Pi 4. Real `deploy/.env` and named-volume content are outside this public repository.
 
 | Component | Previous pin | New candidate tag | Verified upstream purpose | Migration decision |
 | --- | --- | --- | --- | --- |
@@ -10,7 +10,7 @@
 | Grafana | `grafana/grafana:13.1.0` | `grafana/grafana:13.1.8` | [13.1 security maintenance](https://github.com/grafana/grafana/releases/tag/v13.1.8) fixes CVE-2026-15577, CVE-2026-33374, CVE-2026-93294, CVE-2026-95502 and other bugs. | Same 13.1 line; backup DB, check plugins/provisioning. |
 | cAdvisor (disabled) | `google/cadvisor:v0.60.5` | `ghcr.io/google/cadvisor:0.60.6` | [Minor stability fixes](https://github.com/google/cadvisor/releases/tag/v0.60.6), not an authorization to enable privileged mode. | Keep `containers` profile OFF. |
 | AdGuard Home (disabled) | `adguard/adguardhome:v0.107.76` | `adguard/adguardhome:v0.107.79` | [Security fixes](https://github.com/AdguardTeam/AdGuardHome/releases/tag/v0.107.79), including DNS-over-QUIC exhaustion (GHSA-w6v6-f44j-3rj2). | Keep `dns` profile OFF; do not change LAN DNS. |
-| CrowdSec (disabled) | `crowdsecurity/crowdsec:v1.7.8-debian` | *tag corrected only* | [Upstream 1.8.1](https://github.com/crowdsecurity/crowdsec/releases/tag/v1.8.1) exists, but it is a separate 1.7 → 1.8 migration with acquisition and image-variant compatibility unverified. | Keep `detection` profile OFF; verify separately before upgrade. |
+| CrowdSec (disabled) | `crowdsecurity/crowdsec:1.7.8-debian` (**invalid old tag**) | `crowdsecurity/crowdsec:v1.7.8-debian` (**verified**) | [Upstream 1.8.1](https://github.com/crowdsecurity/crowdsec/releases/tag/v1.8.1) exists, but it is a separate 1.7 → 1.8 migration with acquisition and image-variant compatibility unverified. | Keep `detection` profile OFF; [seven-image ARM64 registry-manifest CI](https://github.com/JimBLogic/defensive-homelab-blue-team/actions/runs/38737509264) passed with the corrected `v`-prefixed Docker Hub tag. Upstream [CrowdSec GitHub package](https://github.com/crowdsecurity/crowdsec/pkgs/container/crowdsec/856330958?tag=v1.7.8-debian) also lists that version's ARM64 variant on GHCR. These facts do **not** validate a running container or justify upgrading to 1.8. |
 
 ## Security decisions beyond image versions
 
