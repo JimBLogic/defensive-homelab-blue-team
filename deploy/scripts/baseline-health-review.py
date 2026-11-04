@@ -135,6 +135,16 @@ def runtime_projection(container, role, config):
     actual_mounts = {(v["Destination"], v["Type"], v["RW"],
                      v.get("Source") if v["Type"] == "bind" else None)
                     for v in container.get("Mounts", [])}
+    # Docker Desktop may translate bind-source paths between WSL and the engine.
+    # Only the source differs: destinations, types, RW flags and counts must match.
+    # This is never a PASS and does not expose private source paths in reports.
+    mount_source_mismatch_only = (
+        actual_mounts != expected_mounts
+        and len(container.get("Mounts", [])) == len(configured.get("volumes", []))
+        and {(dst, kind, rw) for dst, kind, rw, _ in actual_mounts}
+            == {(dst, kind, rw) for dst, kind, rw, _ in expected_mounts}
+        and any(kind == "bind" for _, kind, _, _ in expected_mounts)
+    )
     logging = host.get("LogConfig", {})
     log_options = logging.get("Config", {})
     return {
@@ -150,6 +160,7 @@ def runtime_projection(container, role, config):
         "privileged": host.get("Privileged") is True,
         "pid_exception_matches": host.get("PidMode", "") == ("host" if role == "node-exporter" else ""),
         "mounts_match": actual_mounts == expected_mounts,
+        "mount_source_mismatch_only": mount_source_mismatch_only,
         "readonly_matches": host.get("ReadonlyRootfs") is bool(configured.get("read_only", False)),
         "image_pin_matches": pin(current_image) and current_image == configured.get("image"),
         "logging_rotates": logging.get("Type") == "json-file"
@@ -263,7 +274,9 @@ class Review:
                 self.add(role + ".presence", "FAIL", count=len(items))
                 continue
             container = items[0]
-            self.attempt(role + ".runtime", lambda r=role, c=container: self.runtime(r, c, config))
+            self.attempt(role + ".runtime",
+                         lambda r=role, c=container: self.runtime(
+                             r, c, config, docker_desktop=info.get("OperatingSystem") == "Docker Desktop"))
             cid = container["Id"]
             self.attempt(role + ".resources", lambda r=role, i=cid: self.resources(r, i))
             self.attempt(role + ".log_window", lambda r=role, i=cid: self.logs(r, i))
@@ -275,7 +288,7 @@ class Review:
             "kuma_http", "PASS" if http(service_port(config, "uptime-kuma", 3001), "/", as_json=False) else "FAIL"))
         return self.report()
 
-    def runtime(self, role, container, config):
+    def runtime(self, role, container, config, *, docker_desktop=False):
         facts = runtime_projection(container, role, config)
         self.add(role + ".state", "PASS" if facts["state"] == "running" else "FAIL",
                  state=facts["state"], restart_count=facts["restart_count"], oom_killed=facts["oom_killed"])
@@ -286,7 +299,13 @@ class Review:
                     "mounts_match", "readonly_matches", "image_pin_matches", "logging_rotates",
                     "resource_limits_present")
         for key in controls:
-            self.add(role + "." + key, "PASS" if facts[key] else "FAIL")
+            if (key == "mounts_match" and not facts[key] and docker_desktop
+                    and facts["mount_source_mismatch_only"]):
+                # A translated bind source still requires human verification;
+                # a native host mismatch, extra mount or writable mount is FAIL.
+                self.add(role + "." + key, "REVIEW_REQUIRED")
+            else:
+                self.add(role + "." + key, "PASS" if facts[key] else "FAIL")
         self.add(role + ".privilege_exception",
                  "REVIEW_REQUIRED" if role == "cadvisor" and facts["privileged"]
                  else "FAIL" if facts["privileged"] else "PASS")
