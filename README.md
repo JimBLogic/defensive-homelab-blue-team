@@ -15,9 +15,11 @@ A small Raspberry Pi 4 / Docker learning lab for service-health review, Linux te
 
 ## Operational evidence
 
-**Local pilot (review draft):** [2026-11-04 WSL2 LITE validation](docs/validation-wsl2-2026-11-04.md), status **DEGRADED**. This covers four running services, two timestamped observations, and the confirmed FS-001 telemetry gap. It is **not** a completed Exercise 001 or evidence of Raspberry Pi operation.
+**No completed operational exercise is published yet.** This section is reserved for human-reviewed reports marked COMPLETED under `exercises/`. The Raspberry Pi's runtime, storage, firewall, handoff and security boundaries remain unverified. CI or a local pilot alone cannot close Exercise 001.
 
-**Raspberry Pi operational evidence: none completed yet.** The actual hardware exercise must satisfy its own runtime, storage, firewall, handoff and human review requirements. Templates, synthetic tests and CI checks do not count as live operational evidence.
+## WSL2 pilot (not a completed exercise)
+
+**[2026-11-04 WSL2 LITE validation](docs/validation-wsl2-2026-11-04.md): DEGRADED, public review draft.** This separate environment demonstrates four running services, two timestamped observations and confirmed FS-001 filesystem-telemetry failure. It does **not** establish Raspberry Pi compatibility, production readiness or Exercise 001 completion.
 
 ## Exercise queue
 
