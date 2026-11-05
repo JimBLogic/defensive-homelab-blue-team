@@ -2,15 +2,15 @@
 
 **Deployment-ready defensive baseline · operational validation in progress**
 
-A small Raspberry Pi 4 / Docker learning lab for service-health review, Linux telemetry, hardening and evidence-based incident triage. The target is demonstrable Junior SOC / Blue Team practice. **The Raspberry Pi deployment and Exercise 001 remain unverified.** A separate [WSL2 LITE operational pilot](docs/validation-wsl2-2026-11-04.md) records a real local test with unresolved findings.
+A defensive Docker learning lab for service-health review, Linux telemetry, hardening and evidence-based incident triage. **Current hands-on platform: Windows 11 + Ubuntu WSL2 + Docker Desktop.** The Raspberry Pi 4/ARM64 remains the future deployment target (**NOT TESTED**); Exercise 001 is still incomplete. See the [WSL2 LITE pilot](docs/validation-wsl2-2026-11-04.md) for actual observations and gaps.
 
 | Recruiter question | Inspectable answer |
 | --- | --- |
-| What is this? | A reproducible defensive monitoring baseline for a Raspberry Pi 4 with SSD storage. |
+| What is this? | A reproducible defensive monitoring baseline, operated and studied on Windows 11/WSL2 today; Raspberry Pi 4/ARM64 later. |
 | What is running? | Four core services were observed in a **local Docker Desktop / WSL2 pilot**; the Raspberry Pi target remains **NOT TESTED**. A running WSL2 stack is not proof of Raspberry Pi deployment. |
 | What have I actually operated? | A documented [WSL2 LITE pilot](docs/validation-wsl2-2026-11-04.md) with two observations, metrics and one confirmed filesystem-collector failure. Exercise 001 on the Raspberry Pi remains **IN PROGRESS / NOT VERIFIED**. |
 | What security decisions did I make? | Loopback dashboard bindings, an internal metrics network, rotating logs, explicit image tags, excluded secrets, bounded resources, and disabled optional profiles. Privilege exceptions are documented. |
-| What evidence can I inspect? | Source configuration, repository/CI checks and a **public review draft** of the local WSL2 observations. Private originals remain outside Git; the WSL2 document is not an approved completed exercise. |
+| What evidence can I inspect? | Source configuration, repository/CI checks and published sanitized WSL2 observations; a separate learning-journal PR remains under review. Private originals remain outside Git; neither document establishes a completed exercise. |
 | What is still planned? | Windows / Sysmon telemetry, one external Wazuh learning environment, queries, alert triage, an incident note and detection tuning. Exercises 002–005 are **PLANNED**. |
 
 ## Operational evidence
@@ -19,7 +19,7 @@ A small Raspberry Pi 4 / Docker learning lab for service-health review, Linux te
 
 ## WSL2 pilot (not a completed exercise)
 
-**[2026-11-04 WSL2 LITE validation](docs/validation-wsl2-2026-11-04.md): DEGRADED, public review draft.** This separate environment demonstrates four running services, two timestamped observations and confirmed FS-001 filesystem-telemetry failure. It does **not** establish Raspberry Pi compatibility, production readiness or Exercise 001 completion.
+**[2026-11-04 WSL2 LITE validation](docs/validation-wsl2-2026-11-04.md): DEGRADED, published as a sanitized pilot.** This separate environment demonstrates four running services, two timestamped observations and confirmed FS-001 filesystem-telemetry failure. It does **not** establish Raspberry Pi compatibility, production readiness or Exercise 001 completion.
 
 **[2026-11-05 WSL2 test & learning journal](docs/wsl2-learning-journal-2026-11-05.md): REVIEW DRAFT.** Records the Windows 11 cold-boot Prometheus incident, recovery, observability checks, PR #14 mount-classification validation and outstanding work. The Windows/WSL2 lab is the **current practice platform**; Raspberry Pi is the **future migration target**, not required for this learning stage.
 
