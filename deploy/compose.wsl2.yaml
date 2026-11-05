@@ -1,9 +1,13 @@
 # Experimental Windows 11 / Ubuntu WSL2 / Docker Desktop override.
-# Apply ONLY after reviewing the active Compose file stack and existing local
-# Node Exporter override; do not replace an operator's untracked configuration.
-# The shared compose.yaml and the future Raspberry Pi setup remain unchanged.
+# Operator observed the active container has exactly /:/host:ro and no explicit
+# propagation; the old temporary WSL2 Compose override no longer exists.
+# Opt-in only. Preserve the Raspberry Pi / native Linux base Compose unchanged.
 services:
   node-exporter:
+    # Docker Desktop WSL2 currently uses a readonly root bind with default
+    # rprivate propagation. This overrides native Linux's :ro,rslave bind.
+    volumes:
+      - /:/host:ro
     command:
       - --path.rootfs=/host
       # Keep baseline host exclusions. Exclude only Docker Desktop's internal
