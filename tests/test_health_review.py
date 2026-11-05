@@ -84,6 +84,62 @@ class PrivacyAndCorrectness(unittest.TestCase):
         self.assertFalse(facts["mounts_match"])
         self.assertFalse(facts["logging_rotates"])
 
+    def test_desktop_bind_source_remap_requires_manual_review(self):
+        cfg = config()
+        cfg["services"]["grafana"]["volumes"] = [
+            {"target": "/fixture/config", "type": "bind", "read_only": True,
+             "source": "/fixture/expected_source"}]
+        c = container()
+        c["Mounts"] = [
+            {"Destination": "/fixture/config", "Type": "bind", "RW": False,
+             "Source": "/fixture/translated_source"}]
+        facts = health.runtime_projection(c, "grafana", cfg)
+        self.assertFalse(facts["mounts_match"])
+        self.assertTrue(facts["mount_source_mismatch_only"])
+        self.assertNotIn("/fixture/translated_source", json.dumps(facts))
+
+        def mount_result(is_desktop):
+            review = health.Review()
+            review.runtime("grafana", c, cfg, docker_desktop=is_desktop)
+            return next(x["status"] for x in review.checks
+                        if x["check"] == "grafana.mounts_match")
+
+        self.assertEqual(mount_result(True), "REVIEW_REQUIRED")
+        self.assertEqual(mount_result(False), "FAIL")
+        c["Mounts"][0]["Source"] = "/fixture/expected_source"
+        self.assertEqual(mount_result(True), "PASS")
+
+    def test_desktop_mount_drift_never_downgrades_structural_failures(self):
+        cfg = config()
+        cfg["services"]["grafana"]["volumes"] = [
+            {"target": "/fixture/config", "type": "bind", "read_only": True,
+             "source": "/fixture/expected_source"}]
+
+        for mutation in ("extra", "writable", "wrong_destination", "wrong_type"):
+            with self.subTest(mutation=mutation):
+                c = container()
+                c["Mounts"] = [
+                    {"Destination": "/fixture/config", "Type": "bind", "RW": False,
+                     "Source": "/fixture/translated_source"}]
+                if mutation == "extra":
+                    c["Mounts"].append(
+                        {"Destination": "/unexpected", "Type": "bind", "RW": False,
+                         "Source": "/fixture/extra"})
+                elif mutation == "writable":
+                    c["Mounts"][0]["RW"] = True
+                elif mutation == "wrong_destination":
+                    c["Mounts"][0]["Destination"] = "/unexpected"
+                elif mutation == "wrong_type":
+                    c["Mounts"][0]["Type"] = "volume"
+                facts = health.runtime_projection(c, "grafana", cfg)
+                self.assertFalse(facts["mounts_match"])
+                self.assertFalse(facts["mount_source_mismatch_only"])
+                review = health.Review()
+                review.runtime("grafana", c, cfg, docker_desktop=True)
+                status = next(x["status"] for x in review.checks
+                              if x["check"] == "grafana.mounts_match")
+                self.assertEqual(status, "FAIL")
+
     def test_image_tags_and_digest_are_explicit(self):
         for image in ("example/component:latest", "example/component:1", "example/component"):
             self.assertFalse(health.pin(image))
