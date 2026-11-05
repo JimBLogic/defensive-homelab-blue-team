@@ -3,6 +3,9 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 deploy_dir="$repo_root/deploy"
+# Relative ripgrep exclusions must be anchored to the repository regardless of
+# the caller's working directory (including PowerShell invoking WSL via absolute path).
+cd "$repo_root"
 failures=0
 
 pass() {
