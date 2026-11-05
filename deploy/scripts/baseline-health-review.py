@@ -13,6 +13,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -85,10 +86,15 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def http(port, path, *, credentials=None, as_json=True):
+def http(port, path, *, credentials=None, as_json=True, expected_redirect=None):
     # Destination is fixed loopback, with no proxy or redirect credential leakage.
     port = integer(port)
     if not 1 <= port <= 65535 or not path.startswith("/"):
+        raise Unavailable()
+    # Allow only Kuma's known local dashboard hop. Never redirect credentials,
+    # never accept an arbitrary Location, and never enable redirects globally.
+    if expected_redirect is not None and (expected_redirect != "/dashboard"
+                                          or path != "/" or as_json or credentials is not None):
         raise Unavailable()
     request = urllib.request.Request(f"http://127.0.0.1:{port}{path}")
     if credentials is not None:
@@ -101,6 +107,12 @@ def http(port, path, *, credentials=None, as_json=True):
             if len(data) > 2 * 1024 * 1024:
                 raise Unavailable()
             return json.loads(data) if as_json else response.status == 200
+    except urllib.error.HTTPError as error:
+        if (expected_redirect == "/dashboard" and error.code == 302
+                and error.headers.get("Location") == expected_redirect):
+            # Rebuild a new request against the fixed loopback endpoint only.
+            return http(port, expected_redirect, as_json=False)
+        raise Unavailable() from None
     except (OSError, ValueError):
         raise Unavailable() from None
 
@@ -285,7 +297,8 @@ class Review:
         self.attempt("prometheus_targets", lambda: self.prometheus(config))
         self.attempt("grafana_datasource", lambda: self.grafana(config))
         self.attempt("kuma_http", lambda: self.add(
-            "kuma_http", "PASS" if http(service_port(config, "uptime-kuma", 3001), "/", as_json=False) else "FAIL"))
+            "kuma_http", "PASS" if http(service_port(config, "uptime-kuma", 3001), "/",
+                                         as_json=False, expected_redirect="/dashboard") else "FAIL"))
         return self.report()
 
     def runtime(self, role, container, config, *, docker_desktop=False):
