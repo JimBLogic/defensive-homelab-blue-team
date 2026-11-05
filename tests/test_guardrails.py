@@ -22,6 +22,48 @@ class GuardrailTests(unittest.TestCase):
     def check(self):
         return guard.compose_issues(self.base, self.full, self.lite, self.env)
 
+    def test_wsl2_filesystem_override_keeps_security_and_host_metrics(self):
+        import re
+
+        overlay = yaml.safe_load((ROOT / "deploy/compose.wsl2.yaml").read_text())
+        self.assertEqual(set(overlay), {"services"})
+        self.assertEqual(set(overlay["services"]), {"node-exporter"})
+        self.assertEqual(set(overlay["services"]["node-exporter"]), {"command"})
+
+        base_command = self.base["services"]["node-exporter"]["command"]
+        command = overlay["services"]["node-exporter"]["command"]
+        self.assertEqual(command[0], base_command[0])
+        prefix = "--collector.filesystem.mount-points-exclude="
+        self.assertTrue(base_command[1].startswith(prefix))
+        self.assertTrue(command[1].startswith(prefix))
+        baseline = re.compile(base_command[1][len(prefix):].replace("$", "$"))
+        wsl2 = re.compile(command[1][len(prefix):].replace("$", "$"))
+
+        docker_desktop = (
+            "/mnt/host/wsl/docker-desktop-bind-mounts/Ubuntu/example",
+            "/run/desktop/mnt/host/wsl/docker-desktop-bind-mounts/Ubuntu/example",
+            "/var/example/wsl/docker-desktop-bind-mounts/Ubuntu/example",
+        )
+        for mountpoint in docker_desktop:
+            with self.subTest(excluded=mountpoint):
+                self.assertIsNone(baseline.match(mountpoint))
+                self.assertIsNotNone(wsl2.match(mountpoint))
+
+        retained = (
+            "/", "/home", "/home/user", "/mnt/storage",
+            "/var/lib/postgresql", "/tmp", "/run", "/mnt/host",
+            "/mnt/host/wsl/docker-desktop-bind-mounts-other/example",
+        )
+        for mountpoint in retained:
+            with self.subTest(retained=mountpoint):
+                self.assertIsNone(wsl2.match(mountpoint))
+
+        default_exclusions = ("/dev", "/proc/self", "/sys", "/var/lib/docker/overlay2")
+        for mountpoint in default_exclusions:
+            with self.subTest(default_exclusion=mountpoint):
+                self.assertIsNotNone(baseline.match(mountpoint))
+                self.assertIsNotNone(wsl2.match(mountpoint))
+
     def test_repository_security_configuration(self):
         self.assertEqual(self.check(), [])
 
