@@ -1,140 +1,84 @@
-# FS-001 — Opt-in WSL2 filesystem collector experiment
+# FS-001 — WSL2 Node Exporter filesystem telemetry recovery
 
-**Status:** CANDIDATE / NOT TESTED AGAINST LIVE CONTAINERS  
-**Target:** Windows 11 + Ubuntu WSL2 + Docker Desktop, LITE lab only.  
-**Original target:** Raspberry Pi 4 / native Linux remains **NOT TESTED** and unchanged.
+**Observed:** 2026-11-05 · Windows 11 / Ubuntu WSL2 / Docker Desktop · LITE
+**Status:** **OPERATIONAL RECOVERY VERIFIED IN WSL2** by operator runtime checks; source PR remains **Draft** pending independent CI/review and monitoring.
+**Raspberry Pi 4 / native Linux:** **NOT TESTED**; shared `deploy/compose.yaml` remains unchanged.
+**Exercise 001:** **IN PROGRESS**, not completed by this fix.
 
-## Evidence and hypothesis
+## Symptom and root-cause assessment
 
-A read-only investigation of the running local Node Exporter found:
-- Prometheus target **UP**, `node_scrape_collector_success{collector="filesystem"} = 1`, but **zero** `node_filesystem_size_bytes` and `node_filesystem_avail_bytes` series.
-- Nine recent filesystem log errors contained a duplicate-series message; `node_filesystem_device_error` and `node_filesystem_readonly` occurred in these messages.
-- The log excerpt contained **54** instances of the `fstype=tmpfs` label, corresponding to **3 distinct** mount-point labels. All three labels contained `/wsl/docker-desktop-bind-mounts/`, across the `/run/desktop/`, `/mnt/host/` and other Docker Desktop variants.
-- These counts are log text occurrences, not necessarily distinct mount records. Historical `9p` mount-info parse failures remain separate evidence; the exact root cause is **NOT VERIFIED**.
+Before the correction, Prometheus reported Node Exporter `UP=1` and the filesystem collector success signal `=1`, yet `count(node_filesystem_size_bytes{job="node-exporter"})` and `count(node_filesystem_avail_bytes{job="node-exporter"})` both yielded **zero usable series**. Recent Node Exporter logs contained duplicate-series errors mentioning `node_filesystem_device_error` and `node_filesystem_readonly` with `tmpfs` labels. A bounded excerpt showed **three distinct** problematic mountpoint labels in Docker Desktop's `/wsl/docker-desktop-bind-mounts/` subtree; 54 is the number of label *occurrences*, not a count of distinct mounts. A separate earlier WSL2 observation found four unusual `9p` mount-info entries; whether these were the same root cause remains **UNVERIFIED**.
 
-**Hypothesis:** The internal Docker Desktop bind-mount subtree triggers filesystem metric duplicates in Node Exporter under WSL2. The proposed narrow mount-point exclusion may restore the other filesystem metrics. **It does not prove the underlying Docker Desktop bug is fixed.**
+The working diagnosis is **Docker Desktop-specific internal bind mounts triggering filesystem metric collisions**, not a native Raspberry Pi filesystem problem. The exclusion addressed the observed symptom; no claim is made to have fixed Docker Desktop itself.
 
-## Proposed change
+## Opt-in fix and rollback
 
-The new `deploy/compose.wsl2.yaml` is **opt-in** and overrides two fields **only for Node Exporter**: `volumes` and `command`. Docker inspect of the existing WSL2 container reported precisely one `/:/host:ro` bind mount (no explicit propagation), with effective runtime propagation `rprivate`. The original temporary override file is missing even though its parent directory still exists. This checked mount specification is now represented persistently as `volumes: ["/:/host:ro"]`, replacing the native Linux base `/:/host:ro,rslave` **only when this WSL2 overlay is selected**. The `command` retains `--path.rootfs=/host` and the original exclusions (`/dev`, `/proc`, `/sys`, Docker and containers storage paths), while excluding the Docker Desktop `/wsl/docker-desktop-bind-mounts` subtree.
+- `deploy/compose.wsl2.yaml`: overrides **only Node Exporter** `volumes` and `command`, setting the previously observed effective root bind `/:/host:ro` and keeping `--path.rootfs=/host`. The filesystem exclusion retains baseline system/container storage exclusions, adding the Docker Desktop `/wsl/docker-desktop-bind-mounts` subtree. **It does not exclude all tmpfs, /, /mnt/storage or broad /mnt/host paths.**
+- `deploy/compose.wsl2.rollback.yaml`: restores the **original Node Exporter command** plus the observed WSL2-only `/:/host:ro` mount. Docker Compose uses `$$` to represent the literal `$` regex anchor passed to the container. An observed 113-versus-114-character discrepancy was verified to be *only* this escaping difference.
+- Neither overlay alters the native-Linux/Raspberry Pi base `/:/host:ro,rslave` mount or adds ports, capabilities, privileged mode, credentials or networks.
+- The previous operator-specific, untracked Compose override lived in a temporary directory and is **no longer present**. It must **not** be used in new invocations. The durable opt-in overlay reconstructs its observed mount semantics.
 
-It **does not** exclude all `tmpfs`, the WSL2 root filesystem, physical disks, `/mnt/storage` or broad `/mnt/host` paths. The baseline `compose.yaml` is unchanged; no privilege or port adjustments are made.
-
-Synthetic regression tests check both expected exclusions and preserved paths. These tests are not equivalent to a runtime check.
-
-## Safe dry-run (prior to changes)
-
-The existing WSL2 pilot **was** created using an untracked temporary mount-propagation override, but that file no longer exists in the recorded temporary location. The new opt-in WSL2 overlay intentionally consolidates the *observed* `/host` mount and filesystem filter in a **single durable file**. Do not try to use the missing temporary file or run a generic `docker compose up`.
-
-First record a clean Git worktree and update the WSL2 experiment branch. For a **read-only dry-run**, the intended file order is now:
+The approved WSL2 operator file stack was:
 
 ```text
 compose.yaml -> compose.lite.yaml -> compose.wsl2.yaml
 ```
 
-Use the same private `.env` and project name as the active pilot; do **not** print the full rendered Compose configuration because it may contain credentials. Validate with `docker compose config --quiet`, then inspect **only a sanitized** Node Exporter projection: service set, image tag category, `command`, `volumes`, read-only, PID mode, networks, security options, resource limits and lack of published exporter ports. The effective mount `/:/host:ro` is WSL2-specific; **the Raspberry Pi base remains `/:/host:ro,rslave`**. Docker Desktop's `rprivate` runtime report is not by itself proof of the correct propagation semantics.
+The rollback file, when explicitly needed, must **replace** `compose.wsl2.yaml` as the final overlay. Never include both overlays in one invocation. Keep the same existing project name `defensive-homelab-wsl-test` and private `.env`; never publish the rendered full configuration, complete Docker inspect or raw logs. Do not use `docker compose down -v` or modify optional profiles.
 
-Before approving recreation, check exact active project name, files, env values, mount choices and existing named volumes. Do not recreate Grafana/Prometheus/Kuma or use `down -v`. Runtime testing, if later authorized, should replace **only** the Node Exporter container with `up -d --no-deps --force-recreate node-exporter` using the reviewed complete Compose file stack, after recording rollback state.
+## Preflight evidence
 
-## Exact WSL2 rollback candidate
+Operator-provided local observations on the WSL2 experiment branch:
 
-**Operator evidence (2026-11-05):** live and base Node Exporter arguments differ byte-for-byte but normalize to identical strings when Compose's YAML `$` end-anchor escape is converted to the literal `# FS-001 — Opt-in WSL2 filesystem collector experiment
+| Check | Result |
+| --- | --- |
+| Python unit suite after rollback tests were added | **33/33 OK, exit 0** |
+| Candidate `docker compose config --quiet` | **PASS**, exit 0 |
+| Rollback `docker compose config --quiet` | **PASS**, exit 0 |
+| Candidate sanitized security/config projection | **12/12 true** |
+| Rollback-vs-running-container sanitized critical settings | **12/12 true** |
+| Proposed mount filter vs 3 observed problem mount labels | **3/3 excluded** |
+| Sampled root/storage/system/container paths | No new exclusion except Docker Desktop subtree |
 
-**Status:** CANDIDATE / NOT TESTED AGAINST LIVE CONTAINERS  
-**Target:** Windows 11 + Ubuntu WSL2 + Docker Desktop, LITE lab only.  
-**Original target:** Raspberry Pi 4 / native Linux remains **NOT TESTED** and unchanged.
+These tests alone are **not** runtime evidence or an executed rollback.
 
-## Evidence and hypothesis
+## Approved runtime intervention and acceptance
 
-A read-only investigation of the running local Node Exporter found:
-- Prometheus target **UP**, `node_scrape_collector_success{collector="filesystem"} = 1`, but **zero** `node_filesystem_size_bytes` and `node_filesystem_avail_bytes` series.
-- Nine recent filesystem log errors contained a duplicate-series message; `node_filesystem_device_error` and `node_filesystem_readonly` occurred in these messages.
-- The log excerpt contained **54** instances of the `fstype=tmpfs` label, corresponding to **3 distinct** mount-point labels. All three labels contained `/wsl/docker-desktop-bind-mounts/`, across the `/run/desktop/`, `/mnt/host/` and other Docker Desktop variants.
-- These counts are log text occurrences, not necessarily distinct mount records. Historical `9p` mount-info parse failures remain separate evidence; the exact root cause is **NOT VERIFIED**.
-
-**Hypothesis:** The internal Docker Desktop bind-mount subtree triggers filesystem metric duplicates in Node Exporter under WSL2. The proposed narrow mount-point exclusion may restore the other filesystem metrics. **It does not prove the underlying Docker Desktop bug is fixed.**
-
-## Proposed change
-
-The new `deploy/compose.wsl2.yaml` is **opt-in** and overrides two fields **only for Node Exporter**: `volumes` and `command`. Docker inspect of the existing WSL2 container reported precisely one `/:/host:ro` bind mount (no explicit propagation), with effective runtime propagation `rprivate`. The original temporary override file is missing even though its parent directory still exists. This checked mount specification is now represented persistently as `volumes: ["/:/host:ro"]`, replacing the native Linux base `/:/host:ro,rslave` **only when this WSL2 overlay is selected**. The `command` retains `--path.rootfs=/host` and the original exclusions (`/dev`, `/proc`, `/sys`, Docker and containers storage paths), while excluding the Docker Desktop `/wsl/docker-desktop-bind-mounts` subtree.
-
-It **does not** exclude all `tmpfs`, the WSL2 root filesystem, physical disks, `/mnt/storage` or broad `/mnt/host` paths. The baseline `compose.yaml` is unchanged; no privilege or port adjustments are made.
-
-Synthetic regression tests check both expected exclusions and preserved paths. These tests are not equivalent to a runtime check.
-
-## Safe dry-run (prior to changes)
-
-The existing WSL2 pilot **was** created using an untracked temporary mount-propagation override, but that file no longer exists in the recorded temporary location. The new opt-in WSL2 overlay intentionally consolidates the *observed* `/host` mount and filesystem filter in a **single durable file**. Do not try to use the missing temporary file or run a generic `docker compose up`.
-
-First record a clean Git worktree and update the WSL2 experiment branch. For a **read-only dry-run**, the intended file order is now:
-
-```text
-compose.yaml -> compose.lite.yaml -> compose.wsl2.yaml
-```
-
-Use the same private `.env` and project name as the active pilot; do **not** print the full rendered Compose configuration because it may contain credentials. Validate with `docker compose config --quiet`, then inspect **only a sanitized** Node Exporter projection: service set, image tag category, `command`, `volumes`, read-only, PID mode, networks, security options, resource limits and lack of published exporter ports. The effective mount `/:/host:ro` is WSL2-specific; **the Raspberry Pi base remains `/:/host:ro,rslave`**. Docker Desktop's `rprivate` runtime report is not by itself proof of the correct propagation semantics.
-
-Before approving recreation, check exact active project name, files, env values, mount choices and existing named volumes. Do not recreate Grafana/Prometheus/Kuma or use `down -v`. Runtime testing, if later authorized, should replace **only** the Node Exporter container with `up -d --no-deps --force-recreate node-exporter` using the reviewed complete Compose file stack, after recording rollback state.
-
- sent to the container. The observed live string has 113 characters and the base Compose rendered representation has 114; both have two args, with the same first `--path.rootfs=/host` argument. Sampled paths for root, storage, system and container-internal mounts behaved identically in the old filters. The proposed filter excludes only the additional Docker Desktop bind-mount subtree in those samples. This eliminates the observed syntax discrepancy but does **not** establish runtime remediation.
-
-`deploy/compose.wsl2.rollback.yaml` is an **explicit opt-in rollback overlay**. Its Node Exporter `command` is **exactly the original Compose base command** (including Compose's escaped end anchor), and its root bind is **`/:/host:ro`** to match the active WSL2 container, instead of native Linux's `ro,rslave`. Do not use the missing temporary override. **Never include both** `compose.wsl2.yaml` and `compose.wsl2.rollback.yaml` in the same Compose invocation.
-
-For dry-run, always specify the current private env and project, with the rollback file last:
+After explicit operator approval, the operator ran **only**:
 
 ```bash
-COMPOSE_PROJECT_NAME=defensive-homelab-wsl-test docker compose --env-file .env \
-  -f compose.yaml -f compose.lite.yaml -f compose.wsl2.rollback.yaml config --quiet
+COMPOSE_PROJECT_NAME=defensive-homelab-wsl-test docker compose \
+  --env-file .env -f compose.yaml -f compose.lite.yaml -f compose.wsl2.yaml \
+  up -d --no-deps --force-recreate node-exporter
 ```
 
-Do not print full Compose JSON, `.env`, or live `docker inspect` in public reports. Before any modification, compare the rendered rollback exporter **privately** to the running container for image, argv (normalizing Compose `$` to `# FS-001 — Opt-in WSL2 filesystem collector experiment
+The actual operator invoked equivalent absolute paths from Windows PowerShell. Docker reported **1/1 container started**, exit **0**. Post-change inspection confirmed a **new container ID**, running state, read-only root filesystem and non-privileged execution. No other Compose service was requested for recreation.
 
-**Status:** CANDIDATE / NOT TESTED AGAINST LIVE CONTAINERS  
-**Target:** Windows 11 + Ubuntu WSL2 + Docker Desktop, LITE lab only.  
-**Original target:** Raspberry Pi 4 / native Linux remains **NOT TESTED** and unchanged.
+The operator's post-change read-only checks then reported:
 
-## Evidence and hypothesis
+| Live check | Observed result | Interpretation |
+| --- | --- | --- |
+| `up{job="node-exporter"}` | **1** | Scrape target operational |
+| `node_scrape_collector_success{job="node-exporter",collector="filesystem"}` | **1** | Collector reports success |
+| `count(node_filesystem_size_bytes{job="node-exporter"})` | **9** (previously **0**) | Capacity series recovered |
+| `count(node_filesystem_avail_bytes{job="node-exporter"})` | **9** (previously **0**) | Available-space series recovered |
+| Count with size greater than zero | **9** | Nonzero capacity |
+| Count with available bytes at least zero | **9** | Nonnegative available-space values |
+| Non-temporary filesystem size series greater than zero, excluding `tmpfs|ramfs|overlay|9p|autofs|squashfs` | **4** | Useful non-temporary metrics observed, not proof of physical Windows disk headroom |
+| `up{job="prometheus"}` | **1** | Self-monitoring operational |
+| Docker health of Grafana / Prometheus / Uptime Kuma | **HEALTHY / HEALTHY / HEALTHY** | Three unaffected services healthy at inspection time |
+| Bounded Docker logs since new Node Exporter start | **58 lines**, read OK, fewer than 500 | Post-recreation log inspection |
+| Duplicate-series error patterns | **0 matches** | No matching duplicate errors in sampled logs |
+| Mountinfo/parse error patterns | **0 matches** | No matching parse errors in sampled logs |
 
-A read-only investigation of the running local Node Exporter found:
-- Prometheus target **UP**, `node_scrape_collector_success{collector="filesystem"} = 1`, but **zero** `node_filesystem_size_bytes` and `node_filesystem_avail_bytes` series.
-- Nine recent filesystem log errors contained a duplicate-series message; `node_filesystem_device_error` and `node_filesystem_readonly` occurred in these messages.
-- The log excerpt contained **54** instances of the `fstype=tmpfs` label, corresponding to **3 distinct** mount-point labels. All three labels contained `/wsl/docker-desktop-bind-mounts/`, across the `/run/desktop/`, `/mnt/host/` and other Docker Desktop variants.
-- These counts are log text occurrences, not necessarily distinct mount records. Historical `9p` mount-info parse failures remain separate evidence; the exact root cause is **NOT VERIFIED**.
+**Disposition:** **FS-001 operational recovery verified for the WSL2 pilot at the measured points in time.** The original zero-series symptom is demonstrably removed. This does **not** establish long-term stability, Raspberry Pi equivalence, full log coverage, or completion of the broader Homelab Exercise 001.
 
-**Hypothesis:** The internal Docker Desktop bind-mount subtree triggers filesystem metric duplicates in Node Exporter under WSL2. The proposed narrow mount-point exclusion may restore the other filesystem metrics. **It does not prove the underlying Docker Desktop bug is fixed.**
+## Remaining controls and follow-up
 
-## Proposed change
+1. **Independent collector evidence:** `baseline-health-review.py` currently builds the base/LITE Compose file stack without the WSL2 overlay. Do not interpret its default mount comparison as an accurate assessment of the WSL2-specific pilot. Reconcile collector support for opt-in WSL2 overlays separately before treating its `filesystem_available_percent` field as closed.
+2. **Sustained operation:** repeat metrics/duplicate checks after normal restarts and a later cold boot. Future failures should reopen FS-001; the old Docker Desktop mount translation and historical `9p` anomaly are not guaranteed fixed.
+3. **Rollback:** statically validated and matched to the original runtime's essential fields, but **NOT TESTED LIVE**. Apply only if required and authorized, using the same private env/project, single-service recreation and immediate post-change checks.
+4. **CI and publication:** the PR remains **Draft** while independent GitHub Actions runs cannot start runner steps (tracked in issue #17); local 33/33 tests do not replace required CI policy or an approved exception.
+5. **Storage boundary:** nine exporter mount series and four non-temporary series do not establish physical Windows volume free space, SSD condition or future Raspberry Pi filesystem compatibility. Validate those separately.
 
-The new `deploy/compose.wsl2.yaml` is **opt-in** and overrides two fields **only for Node Exporter**: `volumes` and `command`. Docker inspect of the existing WSL2 container reported precisely one `/:/host:ro` bind mount (no explicit propagation), with effective runtime propagation `rprivate`. The original temporary override file is missing even though its parent directory still exists. This checked mount specification is now represented persistently as `volumes: ["/:/host:ro"]`, replacing the native Linux base `/:/host:ro,rslave` **only when this WSL2 overlay is selected**. The `command` retains `--path.rootfs=/host` and the original exclusions (`/dev`, `/proc`, `/sys`, Docker and containers storage paths), while excluding the Docker Desktop `/wsl/docker-desktop-bind-mounts` subtree.
-
-It **does not** exclude all `tmpfs`, the WSL2 root filesystem, physical disks, `/mnt/storage` or broad `/mnt/host` paths. The baseline `compose.yaml` is unchanged; no privilege or port adjustments are made.
-
-Synthetic regression tests check both expected exclusions and preserved paths. These tests are not equivalent to a runtime check.
-
-## Safe dry-run (prior to changes)
-
-The existing WSL2 pilot **was** created using an untracked temporary mount-propagation override, but that file no longer exists in the recorded temporary location. The new opt-in WSL2 overlay intentionally consolidates the *observed* `/host` mount and filesystem filter in a **single durable file**. Do not try to use the missing temporary file or run a generic `docker compose up`.
-
-First record a clean Git worktree and update the WSL2 experiment branch. For a **read-only dry-run**, the intended file order is now:
-
-```text
-compose.yaml -> compose.lite.yaml -> compose.wsl2.yaml
-```
-
-Use the same private `.env` and project name as the active pilot; do **not** print the full rendered Compose configuration because it may contain credentials. Validate with `docker compose config --quiet`, then inspect **only a sanitized** Node Exporter projection: service set, image tag category, `command`, `volumes`, read-only, PID mode, networks, security options, resource limits and lack of published exporter ports. The effective mount `/:/host:ro` is WSL2-specific; **the Raspberry Pi base remains `/:/host:ro,rslave`**. Docker Desktop's `rprivate` runtime report is not by itself proof of the correct propagation semantics.
-
-Before approving recreation, check exact active project name, files, env values, mount choices and existing named volumes. Do not recreate Grafana/Prometheus/Kuma or use `down -v`. Runtime testing, if later authorized, should replace **only** the Node Exporter container with `up -d --no-deps --force-recreate node-exporter` using the reviewed complete Compose file stack, after recording rollback state.
-
- only for comparison), mounts, security options, PID mode, networks, and resource limits. A successful `config --quiet` or unit test is **not** a live rollback test.
-
-**Only after explicit operator authorization and verified preflight**, a Node Exporter-only experiment may use the reviewed file set with `up -d --no-deps --force-recreate node-exporter`. If the experiment fails, use the rollback file instead of the candidate file with the **same flags**, keeping the project name and private env unchanged. Recreate **only Node Exporter**; no `down -v`, profile changes, or other service recreations. After either change, verify exporter process, scraped metrics, recent log errors, security boundaries and that other services remained running. Rollback is **prepared but NOT TESTED live**.
-
-## Live acceptance / rollback criteria
-
-1. Prometheus continues to scrape Node Exporter, as well as itself, and Grafana datasource health remains PASS.
-2. In a defined recent window, filesystem duplicate-series errors drop to zero **after recreation**.
-3. `node_filesystem_size_bytes` and `node_filesystem_avail_bytes` return **non-zero series counts** for relevant, non-internal mountpoints, and the baseline collector's `filesystem_available_percent` changes from NOT_VERIFIED to a reviewable value.
-4. Privileges, root mount, networks and exporter port exposure do not expand. Verify actual host filesystems are visible, not merely that the exporter reports `success=1`.
-5. If series are still absent, errors recur, or non-Docker-Desktop mounts disappear, mark **FAIL**, restore the original Compose file stack and recreate **only** Node Exporter after explicit approval.
-
-Private log details, filenames, secrets and complete mount paths stay outside GitHub. The WSL2 finding **FS-001 remains open** until operator-reviewed runtime evidence satisfies these criteria.
+**Privacy:** only sanitized counts, mount-category patterns and operator-approved observations are recorded in this public source file. No host-specific raw log paths, credential values or private labels are published.
