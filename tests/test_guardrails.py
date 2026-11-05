@@ -28,7 +28,13 @@ class GuardrailTests(unittest.TestCase):
         overlay = yaml.safe_load((ROOT / "deploy/compose.wsl2.yaml").read_text())
         self.assertEqual(set(overlay), {"services"})
         self.assertEqual(set(overlay["services"]), {"node-exporter"})
-        self.assertEqual(set(overlay["services"]["node-exporter"]), {"command"})
+        self.assertEqual(set(overlay["services"]["node-exporter"]), {"command", "volumes"})
+        self.assertEqual(overlay["services"]["node-exporter"]["volumes"], ["/:/host:ro"])
+        self.assertEqual(self.base["services"]["node-exporter"]["volumes"], ["/:/host:ro,rslave"])
+        self.assertTrue(self.base["services"]["node-exporter"]["read_only"])
+        self.assertEqual(self.base["services"]["node-exporter"]["pid"], "host")
+        self.assertNotIn("ports", overlay["services"]["node-exporter"])
+        self.assertNotIn("privileged", overlay["services"]["node-exporter"])
 
         base_command = self.base["services"]["node-exporter"]["command"]
         command = overlay["services"]["node-exporter"]["command"]
