@@ -1,0 +1,13 @@
+# WSL2-only FS-001 rollback: restore the observed Node Exporter argv.
+# This is an explicit opt-in rollback file, NOT part of standard LITE/FULL.
+# Never use it together with compose.wsl2.yaml: use one or the other as
+# the final Compose file in the stack, with the same project name and env.
+services:
+  node-exporter:
+    volumes:
+      - /:/host:ro
+    command:
+      - --path.rootfs=/host
+      # The double dollar is Docker Compose's literal regex end-anchor escape.
+      # Compare with the running container after $$/ -> $/ interpolation.
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containers/storage/.+)($$|/)

@@ -10,6 +10,8 @@ This deployment now uses the Compose v2 file set below instead of the previous s
 - `compose.lite.yaml` for conservative LITE resource settings.
 - `compose.full.yaml` for FULL resource settings; optional services still require explicit profiles.
 
+**WSL2-only filesystem experiment (FS-001):** [candidate, limitations, dry-run and rollback](../docs/fs-001-wsl2-experiment.md). `compose.wsl2.yaml` is an **opt-in overlay** for the Windows 11 / WSL2 lab, not part of the normal LITE/FULL deployment. Do not apply it until the operator's private root-mount override and exact active Compose file order have been reviewed. Raspberry Pi configuration remains unchanged.
+
 Existing named volumes are preserved: `uptime_kuma_data`, `prometheus_data`, `grafana_data`, `adguard_work`, `adguard_conf`, `crowdsec_data`, and `crowdsec_config`.
 
 ## LITE command
