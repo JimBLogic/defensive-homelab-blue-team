@@ -42,7 +42,7 @@ The shown dashboard host bindings were loopback-only. Complete Windows firewall,
 
 ## Validation of the WSL2 bind-source review candidate
 
-The [PR #14](https://github.com/JimBLogic/defensive-homelab-blue-team/pull/14) candidate changes the mount assessment for a Docker Desktop bind-source-path translation from unconditional FAIL to REVIEW_REQUIRED **only** where mount count, destination, type and read-only mode match. The native-Linux and structural-drift checks remain fail-closed.
+The [merged PR #14](https://github.com/JimBLogic/defensive-homelab-blue-team/pull/14) changes the mount assessment for a Docker Desktop bind-source-path translation from unconditional FAIL to REVIEW_REQUIRED **only** where mount count, destination, type and read-only mode match. The native-Linux and structural-drift checks remain fail-closed.
 
 **CI evidence (PR #14):** GitHub Actions repository validation successful; **31/31 Python synthetic tests passed**, including tests that additional mounts, writable mounts and changed destinations/types still FAIL. This is code-level evidence, not proof of the physical host mount identity.
 
