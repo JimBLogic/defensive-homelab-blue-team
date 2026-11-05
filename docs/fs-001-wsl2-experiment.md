@@ -16,7 +16,7 @@ A read-only investigation of the running local Node Exporter found:
 
 ## Proposed change
 
-The new `deploy/compose.wsl2.yaml` is **opt-in** and overrides only `node-exporter.command`. It keeps `--path.rootfs=/host` and the original exclusions (`/dev`, `/proc`, `/sys`, Docker and containers storage paths), while excluding mount-points ending in or below **any path segment** `/wsl/docker-desktop-bind-mounts`.
+The new `deploy/compose.wsl2.yaml` is **opt-in** and overrides two fields **only for Node Exporter**: `volumes` and `command`. Docker inspect of the existing WSL2 container reported precisely one `/:/host:ro` bind mount (no explicit propagation), with effective runtime propagation `rprivate`. The original temporary override file is missing even though its parent directory still exists. This checked mount specification is now represented persistently as `volumes: ["/:/host:ro"]`, replacing the native Linux base `/:/host:ro,rslave` **only when this WSL2 overlay is selected**. The `command` retains `--path.rootfs=/host` and the original exclusions (`/dev`, `/proc`, `/sys`, Docker and containers storage paths), while excluding the Docker Desktop `/wsl/docker-desktop-bind-mounts` subtree.
 
 It **does not** exclude all `tmpfs`, the WSL2 root filesystem, physical disks, `/mnt/storage` or broad `/mnt/host` paths. The baseline `compose.yaml` is unchanged; no privilege or port adjustments are made.
 
@@ -24,13 +24,15 @@ Synthetic regression tests check both expected exclusions and preserved paths. T
 
 ## Safe dry-run (prior to changes)
 
-The existing WSL2 pilot already uses a local **untracked override** to adapt Node Exporter root bind propagation. Do not overwrite that file or run a generic `docker compose up`. Before any runtime changes, identify the existing Compose file stack and compare the **rendered Node Exporter** configuration privately. Compose files must be specified in the actual order, for example:
+The existing WSL2 pilot **was** created using an untracked temporary mount-propagation override, but that file no longer exists in the recorded temporary location. The new opt-in WSL2 overlay intentionally consolidates the *observed* `/host` mount and filesystem filter in a **single durable file**. Do not try to use the missing temporary file or run a generic `docker compose up`.
+
+First record a clean Git worktree and update the WSL2 experiment branch. For a **read-only dry-run**, the intended file order is now:
 
 ```text
-compose.yaml -> compose.lite.yaml -> existing-local-override -> compose.wsl2.yaml
+compose.yaml -> compose.lite.yaml -> compose.wsl2.yaml
 ```
 
-The final override replaces **only** the Node Exporter `command`. Verify original `read_only`, `pid`, `volumes`, `networks`, `security_opt`, `mem_limit`, `pids_limit`, `cpus` and absence of published exporter ports remain intact. Render with `docker compose config --quiet` and avoid uploading rendered configurations with credentials.
+Use the same private `.env` and project name as the active pilot; do **not** print the full rendered Compose configuration because it may contain credentials. Validate with `docker compose config --quiet`, then inspect **only a sanitized** Node Exporter projection: service set, image tag category, `command`, `volumes`, read-only, PID mode, networks, security options, resource limits and lack of published exporter ports. The effective mount `/:/host:ro` is WSL2-specific; **the Raspberry Pi base remains `/:/host:ro,rslave`**. Docker Desktop's `rprivate` runtime report is not by itself proof of the correct propagation semantics.
 
 Before approving recreation, check exact active project name, files, env values, mount choices and existing named volumes. Do not recreate Grafana/Prometheus/Kuma or use `down -v`. Runtime testing, if later authorized, should replace **only** the Node Exporter container with `up -d --no-deps --force-recreate node-exporter` using the reviewed complete Compose file stack, after recording rollback state.
 
