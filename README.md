@@ -21,6 +21,8 @@ A small Raspberry Pi 4 / Docker learning lab for service-health review, Linux te
 
 **[2026-11-04 WSL2 LITE validation](docs/validation-wsl2-2026-11-04.md): DEGRADED, public review draft.** This separate environment demonstrates four running services, two timestamped observations and confirmed FS-001 filesystem-telemetry failure. It does **not** establish Raspberry Pi compatibility, production readiness or Exercise 001 completion.
 
+**[2026-11-05 WSL2 test & learning journal](docs/wsl2-learning-journal-2026-11-05.md): REVIEW DRAFT.** Records the Windows 11 cold-boot Prometheus incident, recovery, observability checks, PR #14 mount-classification validation and outstanding work. The Windows/WSL2 lab is the **current practice platform**; Raspberry Pi is the **future migration target**, not required for this learning stage.
+
 ## Exercise queue
 
 | Exercise | Status | Deliverable |
