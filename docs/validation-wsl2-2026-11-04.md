@@ -4,7 +4,7 @@
 **Result:** DEGRADED - operating with known telemetry gaps and incomplete manual review  
 **Environment:** Ubuntu WSL2 / Docker Desktop; LITE profile  
 **Reviewed source revision:** `b3658b8`  
-**Publication:** Public review draft in PR #13; not merged or approved as a completed exercise
+**Publication:** Sanitized WSL2 pilot merged into main via PR #13; Exercise 001 not completed or approved
 
 ## Scope and setup
 
