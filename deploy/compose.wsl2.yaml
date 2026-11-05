@@ -1,0 +1,12 @@
+# Experimental Windows 11 / Ubuntu WSL2 / Docker Desktop override.
+# Apply ONLY after reviewing the active Compose file stack and existing local
+# Node Exporter override; do not replace an operator's untracked configuration.
+# The shared compose.yaml and the future Raspberry Pi setup remain unchanged.
+services:
+  node-exporter:
+    command:
+      - --path.rootfs=/host
+      # Keep baseline host exclusions. Exclude only Docker Desktop's internal
+      # WSL bind-mount tree, where duplicate tmpfs filesystem series were
+      # observed. ($$ is Compose's escape for a literal regex end anchor.)
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containers/storage/.+|(.*/)?wsl/docker-desktop-bind-mounts)($$|/)
