@@ -22,6 +22,14 @@ class GuardrailTests(unittest.TestCase):
     def check(self):
         return guard.compose_issues(self.base, self.full, self.lite, self.env)
 
+    def test_validator_scans_from_repository_root_even_when_called_elsewhere(self):
+        # Regression: executing the script by absolute path from a different
+        # working directory once caused ripgrep to scan its own forbidden-term
+        # and secret-pattern regex literals, returning false positives.
+        script = (ROOT / "deploy/scripts/validate-repository.sh").read_text()
+        self.assertIn('cd "$repo_root"', script)
+        self.assertLess(script.index('cd "$repo_root"'), script.index('rg -q'))
+
     def test_repository_security_configuration(self):
         self.assertEqual(self.check(), [])
 
