@@ -42,8 +42,8 @@ class GuardrailTests(unittest.TestCase):
         prefix = "--collector.filesystem.mount-points-exclude="
         self.assertTrue(base_command[1].startswith(prefix))
         self.assertTrue(command[1].startswith(prefix))
-        baseline = re.compile(base_command[1][len(prefix):].replace("$", "$"))
-        wsl2 = re.compile(command[1][len(prefix):].replace("$", "$"))
+        baseline = re.compile(base_command[1][len(prefix):].replace("$" * 2, "$"))
+        wsl2 = re.compile(command[1][len(prefix):].replace("$" * 2, "$"))
 
         docker_desktop = (
             "/mnt/host/wsl/docker-desktop-bind-mounts/Ubuntu/example",
@@ -69,6 +69,31 @@ class GuardrailTests(unittest.TestCase):
             with self.subTest(default_exclusion=mountpoint):
                 self.assertIsNotNone(baseline.match(mountpoint))
                 self.assertIsNotNone(wsl2.match(mountpoint))
+
+    def test_wsl2_rollback_restores_original_exporter_command(self):
+        import re
+
+        rollback = yaml.safe_load((ROOT / "deploy/compose.wsl2.rollback.yaml").read_text())
+        candidate = yaml.safe_load((ROOT / "deploy/compose.wsl2.yaml").read_text())
+        self.assertEqual(set(rollback), {"services"})
+        self.assertEqual(set(rollback["services"]), {"node-exporter"})
+        exporter = rollback["services"]["node-exporter"]
+        self.assertEqual(set(exporter), {"volumes", "command"})
+        self.assertEqual(exporter["volumes"], ["/:/host:ro"])
+        self.assertEqual(exporter["volumes"], candidate["services"]["node-exporter"]["volumes"])
+        self.assertEqual(exporter["command"], self.base["services"]["node-exporter"]["command"])
+        self.assertNotEqual(exporter["command"], candidate["services"]["node-exporter"]["command"])
+        self.assertNotIn("ports", exporter)
+        self.assertNotIn("privileged", exporter)
+
+        prefix = "--collector.filesystem.mount-points-exclude="
+        original = exporter["command"][1]
+        self.assertTrue(original.startswith(prefix))
+        regex = re.compile(original[len(prefix):].replace("$" * 2, "$"))
+        self.assertIsNone(regex.match("/mnt/storage"))
+        self.assertIsNone(regex.match("/mnt/host/wsl/docker-desktop-bind-mounts/example"))
+        self.assertIsNotNone(regex.match("/dev"))
+        self.assertIsNotNone(regex.match("/proc/self"))
 
     def test_repository_security_configuration(self):
         self.assertEqual(self.check(), [])
