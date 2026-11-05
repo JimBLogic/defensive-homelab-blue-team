@@ -236,6 +236,61 @@ class PrivacyAndCorrectness(unittest.TestCase):
         self.assertIsNone(health.NoRedirect().redirect_request(None, None, None, None, None,
                                                                "http://PRIVATE_URL_SENTINEL/"))
 
+    def test_kuma_known_loopback_dashboard_redirect(self):
+        redirect = health.urllib.error.HTTPError(
+            "http://127.0.0.1:3001/", 302, "Found", {"Location": "/dashboard"}, None)
+        ready = io.BytesIO(b"<html>ok</html>")
+        ready.status = 200
+        with patch.object(health.urllib.request, "build_opener") as builder:
+            builder.return_value.open.side_effect = [redirect, ready]
+            self.assertTrue(health.http(
+                3001, "/", as_json=False, expected_redirect="/dashboard"))
+            requests = [call.args[0].full_url
+                        for call in builder.return_value.open.call_args_list]
+        self.assertEqual(requests, [
+            "http://127.0.0.1:3001/", "http://127.0.0.1:3001/dashboard"])
+
+    def test_kuma_redirect_rejects_external_or_unexpected_locations(self):
+        locations = ("//outside.example/dashboard", "https://outside.example/dashboard",
+                     "http://127.0.0.1:3001/dashboard", "/dashboard?token=SECRET_SENTINEL",
+                     "/dashboard/", "/login", "/")
+        for location in locations:
+            with self.subTest(location=location):
+                redirect = health.urllib.error.HTTPError(
+                    "http://127.0.0.1:3001/", 302, "Found",
+                    {"Location": location}, None)
+                with patch.object(health.urllib.request, "build_opener") as builder:
+                    builder.return_value.open.side_effect = redirect
+                    with self.assertRaises(health.Unavailable):
+                        health.http(3001, "/", as_json=False,
+                                    expected_redirect="/dashboard")
+                    self.assertEqual(builder.return_value.open.call_count, 1)
+
+    def test_kuma_redirect_policy_never_forwards_credentials_or_loops(self):
+        with self.assertRaises(health.Unavailable):
+            health.http(3001, "/", credentials=("user", "SECRET_SENTINEL"),
+                        as_json=False, expected_redirect="/dashboard")
+        for code in (301, 307, 308):
+            with self.subTest(code=code):
+                redirect = health.urllib.error.HTTPError(
+                    "http://127.0.0.1:3001/", code, "Other",
+                    {"Location": "/dashboard"}, None)
+                with patch.object(health.urllib.request, "build_opener") as builder:
+                    builder.return_value.open.side_effect = redirect
+                    with self.assertRaises(health.Unavailable):
+                        health.http(3001, "/", as_json=False,
+                                    expected_redirect="/dashboard")
+        first = health.urllib.error.HTTPError(
+            "http://127.0.0.1:3001/", 302, "Found", {"Location": "/dashboard"}, None)
+        second = health.urllib.error.HTTPError(
+            "http://127.0.0.1:3001/dashboard", 302, "Found",
+            {"Location": "//outside.example/"}, None)
+        with patch.object(health.urllib.request, "build_opener") as builder:
+            builder.return_value.open.side_effect = [first, second]
+            with self.assertRaises(health.Unavailable):
+                health.http(3001, "/", as_json=False, expected_redirect="/dashboard")
+            self.assertEqual(builder.return_value.open.call_count, 2)
+
     def test_cli_output_failure_does_not_print_private_path(self):
         output = io.StringIO()
         with patch.object(health.sys, "argv", ["collector", "--output", str(health.ROOT / "fixture.json")]):
